@@ -1,8 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.25;
 
+/**
+ * @title ESCROW
+ * @author 4B
+ * @notice Standard escrow contract
+ */
 contract Escrow {
+
     event ArbitratorAdded(address newArb);
+
     enum AssetType{ERC20, ERC721, Native}
     enum EscrowStatus{NONE, SETTLED, UNSETTLED}
 
@@ -23,9 +30,10 @@ contract Escrow {
     mapping (address user => uint256 points) reputation;
     mapping (uint256 id => EscrowInfo escrow) escrows;
     mapping (address user => bool status) arbitrators;
+
     uint256 insurancePool;
 
-    function createEscrow(EscrowInfo memory newEscrow) external  payable {
+    function createEscrow(EscrowInfo memory newEscrow) external  payable returns(uint256){
         require(escrows[id].buyer == address(0));
         require(newEscrow.buyer != address(0));
         require(newEscrow.seller != address(0));
@@ -46,7 +54,19 @@ contract Escrow {
         }
 
         id++;
+
+        return(id-1);
         
+    }
+
+    function confirmEscrow(uint256 _id) external {
+        require(escrows[_id].deadline > block.timestamp);
+        require(msg.sender == escrows[_id].seller || msg.sender == escrows[_id].buyer);
+        if(msg.sender == escrows[_id].seller){
+            escrows[_id].sellerConfirm = true;
+        }else{
+            escrows[_id].buyerConfirm = true;
+        }
     }
 
     function addArbitrator(address newArbitrator) external {
