@@ -6,8 +6,9 @@ contract Escrow {
     enum AssetType{ERC20, ERC721, Native}
     enum EscrowStatus{NONE, SETTLED, UNSETTLED}
 
+    uint256 id = 0;
+
     struct EscrowInfo {
-        uint256 id;
         address buyer;
         address seller;
         AssetType asset;
@@ -16,6 +17,7 @@ contract Escrow {
         bool buyerConfirm;
         bool sellerConfirm;
         EscrowStatus status;
+        //maybe add param for nft
     }
 
     mapping (address user => uint256 points) reputation;
@@ -23,9 +25,28 @@ contract Escrow {
     mapping (address user => bool status) arbitrators;
     uint256 insurancePool;
 
-    function createEscrow(EscrowInfo memory newEscrow) external {
-        require(newEscrow.buyer == address(0));
+    function createEscrow(EscrowInfo memory newEscrow) external  payable {
+        require(escrows[id].buyer == address(0));
+        require(newEscrow.buyer != address(0));
+        require(newEscrow.seller != address(0));
+        require(newEscrow.amount > 0);
+        require(newEscrow.deadline > block.timestamp);
         require(newEscrow.status == EscrowStatus.NONE);
+
+        if(newEscrow.asset == AssetType.ERC20){
+            //SafeErc20.transferFrom(msg.sender,address(this),newEscrow.amount)
+            escrows[id] = newEscrow;
+            
+        }else if(newEscrow.asset == AssetType.Native){
+            require(msg.value == newEscrow.amount);
+            escrows[id] = newEscrow;
+        }else{
+            //SafeERC721.transferFrom(msg.sender,address(this),newEscrow.amount);
+            //write logic to transfer the nft
+        }
+
+        id++;
+        
     }
 
     function addArbitrator(address newArbitrator) external {
