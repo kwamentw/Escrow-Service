@@ -94,6 +94,22 @@ contract Escrow {
     }
 
     function refundEscrow(uint256 _id) external onlyArbitrator(msg.sender){
+        require(escrows[_id].deadline < block.timestamp,"Pending duration not expired");
+        require(escrows[_id].sellerConfirm == false || escrows[_id].buyerConfirm == false, "Disagreement");
+        if(escrows[_id].asset == AssetType.ERC20){
+            //erc20 transfer logic
+            //transferFrom(address(this), escrowSender);
+        }else if(escrows[_id].asset == AssetType.ERC721){
+            //nft transfer logic
+            //transferFrom(address(this), escrowSender);
+        }else{
+            (bool ok, )=payable(escrows[_id].seller).call{value: escrows[_id].amount}("");
+            require(ok);
+        }
+
+        escrows[_id].amount = 0;
+
+        emit EscrowRefunded(_id);
 
     }
 
