@@ -14,7 +14,7 @@ contract Escrow {
     event EscrowReleased(uint256 id, uint256 amount);
 
     enum AssetType{ERC20, ERC721, Native}
-    enum EscrowStatus{NONE, SETTLED, UNSETTLED}
+    enum EscrowStatus{NONE, SETTLED, REFUNDED}
 
     uint256 id = 0;
 
@@ -79,7 +79,7 @@ contract Escrow {
 
     function confirmEscrow(uint256 _id) external {
         require(escrows[_id].deadline >= block.timestamp);
-        require(msg.sender == escrows[_id].seller || msg.sender == escrows[_id].buyer);
+        require(msg.sender == escrows[_id].seller || msg.sender == escrows[_id].buyer,"Cant call this function");
         if(msg.sender == escrows[_id].seller){
             escrows[_id].sellerConfirm = true;
         }else{
@@ -108,15 +108,42 @@ contract Escrow {
         }
 
         escrows[_id].amount = 0;
+        escrows[_id].status = EscrowStatus.REFUNDED;
 
         emit EscrowRefunded(_id);
 
     }
 
-    function releaseEscrow() external onlyArbitrator(msg.sender){
-        //a percentage of the escrow must go to the contract for maintenance
+    function releaseEscrow(uint256 idd) external onlyArbitrator(msg.sender){
         // check whether buyer and seller has confirmed
+        require(escrows[idd].sellerConfirm == true && escrows[idd].buyerConfirm == true, "Can't release escrow");
         // send tokens to receiver but check which token type before
+        uint256 amount = escrows[idd].amount;
+        address receiver = escrows[idd].buyer;
+
+        if(escrows[idd].asset == AssetType.ERC20){
+            //if(amount>token.balanceOf(address(this)) revert("Not enough funds to proceed");
+            escrows[idd].amount = 0;
+            //transferFrom(address(this), receiver, amount);
+            escrows[idd].status = EscrowStatus.SETTLED;
+        }else if(escrows[idd].asset == AssetType.Native){
+            if(amount<=address(this).balance){
+                (bool ok, ) = payable(receiver).call{value: amount}("");
+                require(ok);
+            }else{
+                revert("Not enough balance");
+            }
+
+            escrows[idd].amount=0;
+            escrows[idd].status = EscrowStatus.SETTLED;
+        }else{
+            // nft transfer logic
+            escrows[idd].status= EscrowStatus.SETTLED;
+        }
+        //a percentage of the escrow must go to the contract for maintenance
+
+        emit EscrowReleased(idd,amount);
+        
 
     }
 }
