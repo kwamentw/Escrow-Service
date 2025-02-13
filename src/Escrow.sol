@@ -8,11 +8,13 @@ pragma solidity 0.8.25;
  */
 contract Escrow {
 
+    // events
     event ArbitratorAdded(address newArb);
     event EscrowCreated(uint256 id);
     event EscrowRefunded(uint256 id);
     event EscrowReleased(uint256 id, uint256 amount);
 
+    // enum
     enum AssetType{ERC20, ERC721, Native}
     enum EscrowStatus{NONE, SETTLED, REFUNDED}
 
@@ -27,15 +29,16 @@ contract Escrow {
         bool buyerConfirm;
         bool sellerConfirm;
         EscrowStatus status;
-        //maybe add param for nft
     }
 
+    // mapping
     mapping (address user => uint256 points) reputation;
     mapping (uint256 id => EscrowInfo escrow) escrows;
     mapping (address user => bool status) arbitrators;
 
-    uint256 insurancePool;
-    address owner;
+    //storage var
+    uint256 insurancePool; // i think we should make this var a fee for every txn
+    address owner;// owner of contract
 
     constructor(address _owner){
         owner = _owner;
@@ -105,13 +108,12 @@ contract Escrow {
         }else{
             (bool ok, )=payable(escrows[_id].seller).call{value: escrows[_id].amount}("");
             require(ok);
-        }
+        } // looks like if it is set to none it will pass this check i gotta check that
 
         escrows[_id].amount = 0;
         escrows[_id].status = EscrowStatus.REFUNDED;
 
         emit EscrowRefunded(_id);
-
     }
 
     function releaseEscrow(uint256 idd) external onlyArbitrator(msg.sender){
@@ -143,7 +145,5 @@ contract Escrow {
         //a percentage of the escrow must go to the contract for maintenance
 
         emit EscrowReleased(idd,amount);
-        
-
     }
 }
