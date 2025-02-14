@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.25;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+
 /**
  * @title ESCROW
  * @author 4B
  * @notice Standard escrow contract
  */
 contract Escrow {
+    using SafeERC20 for IERC20;
 
     // events
     event ArbitratorAdded(address newArb);
@@ -39,9 +45,11 @@ contract Escrow {
     //storage var
     uint256 insurancePool; // i think we should make this var a fee for every txn
     address owner;// owner of contract
+    IERC20 token; // I think we'll fuck with usdc for now 
 
-    constructor(address _owner){
+    constructor(address _owner, address _token){
         owner = _owner;
+        token = IERC20(_token);
     }
 
     modifier onlyArbitrator(address sender) {
@@ -63,7 +71,8 @@ contract Escrow {
         require(newEscrow.status == EscrowStatus.NONE);
 
         if(newEscrow.asset == AssetType.ERC20){
-            //SafeErc20.transferFrom(msg.sender,address(this),newEscrow.amount)
+            if(token.balanceOf(msg.sender) < newEscrow.amount){ revert("Not Enough Funds"); }
+            token.safeTransferFrom(msg.sender,address(this), newEscrow.amount);
             escrows[id] = newEscrow;
             
         }else if(newEscrow.asset == AssetType.Native){
@@ -98,17 +107,22 @@ contract Escrow {
 
     function refundEscrow(uint256 _id) external onlyArbitrator(msg.sender){
         require(escrows[_id].deadline < block.timestamp,"Pending duration not expired");
+        require(escrows[_id].status != EscrowStatus.REFUNDED,"Escrow already refunded");
         require(escrows[_id].sellerConfirm == false || escrows[_id].buyerConfirm == false, "Disagreement");
         if(escrows[_id].asset == AssetType.ERC20){
-            //erc20 transfer logic
-            //transferFrom(address(this), escrowSender);
+            if(token.balanceOf(address(this))<escrows[_id].amount){
+                revert("Insufficient balance");
+            }
+            token.safeTransfer(escrows[_id].seller, escrows[_id].amount);
         }else if(escrows[_id].asset == AssetType.ERC721){
             //nft transfer logic
             //transferFrom(address(this), escrowSender);
-        }else{
+        }else if(escrows[_id].asset == AssetType.Native){
             (bool ok, )=payable(escrows[_id].seller).call{value: escrows[_id].amount}("");
             require(ok);
-        } // looks like if it is set to none it will pass this check i gotta check that
+        }else{
+            revert("Not a valid asset type");
+        }
 
         escrows[_id].amount = 0;
         escrows[_id].status = EscrowStatus.REFUNDED;
@@ -124,9 +138,11 @@ contract Escrow {
         address receiver = escrows[idd].buyer;
 
         if(escrows[idd].asset == AssetType.ERC20){
-            //if(amount>token.balanceOf(address(this)) revert("Not enough funds to proceed");
+            if(amount > token.balanceOf(address(this))){
+                revert(" Insufficient funds ");
+            }
             escrows[idd].amount = 0;
-            //transferFrom(address(this), receiver, amount);
+            token.safeTransfer(receiver, amount);
             escrows[idd].status = EscrowStatus.SETTLED;
         }else if(escrows[idd].asset == AssetType.Native){
             if(amount<=address(this).balance){
