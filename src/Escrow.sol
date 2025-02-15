@@ -46,6 +46,7 @@ contract Escrow {
     uint256 insurancePool; // i think we should make this var a fee for every txn
     address owner;// owner of contract
     IERC20 token; // I think we'll fuck with usdc for now 
+    address arbitratorFeeBPS = 200; // it will 200BPS of every deposit
 
     constructor(address _owner, address _token){
         owner = _owner;
@@ -78,9 +79,11 @@ contract Escrow {
         }else if(newEscrow.asset == AssetType.Native){
             require(msg.value == newEscrow.amount);
             escrows[id] = newEscrow;
-        }else{
+        }else if(newEscrow.asset == AssetType.ERC721){
             //SafeERC721.transferFrom(msg.sender,address(this),newEscrow.amount);
             //write logic to transfer the nft
+        }else {
+            revert("invalid asset");
         }
 
         id++;
