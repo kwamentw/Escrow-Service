@@ -32,6 +32,7 @@ contract Escrow {
         AssetType asset;
         uint256 amount;
         uint256 deadline;
+        uint256 arbitratorFee;
         bool buyerConfirm;
         bool sellerConfirm;
         EscrowStatus status;
@@ -49,14 +50,18 @@ contract Escrow {
     mapping (address user => bool status) arbitrators;
 
     //storage var
+    uint256 immutable BASIS_POINT = 1e4;
     uint256 insurancePool; // i think we should make this var a fee for every txn
     address owner;// owner of contract
     IERC20 token; // I think we'll fuck with usdc for now 
-    uint32 arbitratorFeeBPS = 200; // it will 200BPS of every deposit
+    uint32 arbitratorFeeBPS; // it will 200BPS of every deposit
+    uint256 arbitratorFeeForNFT;
 
     constructor(address _owner, address _token){
         owner = _owner;
         token = IERC20(_token);
+        arbitratorFeeBPS = 200;
+        arbitratorFeeForNFT = 0.001e18;
         id = 1;
     }
 
@@ -80,24 +85,27 @@ contract Escrow {
         require(newEscrow.nftt.nftAddress != address(0));
 
         userToActivEscrow[msg.sender] = id;
+        uint256 arbitratorFee = arbitratorFeeBPS * newEscrow.amount / BASIS_POINT;
 
         if(newEscrow.asset == AssetType.ERC20){
-            if(token.balanceOf(msg.sender) < newEscrow.amount){ revert("Not Enough Funds"); }
+            if(token.balanceOf(msg.sender) < newEscrow.amount + arbitratorFee){ revert("Not Enough Funds"); }
             token.safeTransferFrom(msg.sender,address(this), newEscrow.amount);
+            token.safeTransferFrom(msg.sender, address(this), arbitratorFee);
+            newEscrow.arbitratorFee = arbitratorFee;
             escrows[id] = newEscrow;
             
         }else if(newEscrow.asset == AssetType.Native){
-            require(msg.value == newEscrow.amount);
+            require(msg.value == newEscrow.amount + arbitratorFee);
+            newEscrow.arbitratorFee = arbitratorFee;
             escrows[id] = newEscrow;
         }else if(newEscrow.asset == AssetType.ERC721){
+            require(msg.value == arbitratorFeeForNFT, "arbitrator Fees not paid");
             address nftcontract = newEscrow.nftt.nftAddress;
             uint256 tokenID = newEscrow.nftt.tokenId;
             require(IERC721(nftcontract).ownerOf(tokenID)==newEscrow.seller,"Trying to sell what is not yours");
-            //SafeERC721.transferFrom(msg.sender,address(this),newEscrow.amount);
             IERC721(nftcontract).safeTransferFrom(msg.sender,address(this),tokenID);
+            newEscrow.arbitratorFee = arbitratorFeeForNFT;
             escrows[id] = newEscrow;
-        }else {
-            revert("invalid asset");
         }
 
         id++;
@@ -126,16 +134,28 @@ contract Escrow {
         require(escrows[_id].deadline < block.timestamp,"Pending duration not expired");
         require(escrows[_id].status != EscrowStatus.REFUNDED,"Escrow already refunded");
         require(escrows[_id].sellerConfirm == false || escrows[_id].buyerConfirm == false, "Disagreement");
+
+        uint256 fee = escrows[_id].arbitratorFee;
+        escrows[_id].amount = 0;
+
         if(escrows[_id].asset == AssetType.ERC20){
             if(token.balanceOf(address(this))<escrows[_id].amount){
                 revert("Insufficient balance");
             }
-            token.safeTransfer(escrows[_id].seller, escrows[_id].amount);
+            token.safeTransferFrom(address(this), msg.sender, fee);
+            token.safeTransferFrom(address(this), escrows[_id].seller, escrows[_id].amount);
+            
         }else if(escrows[_id].asset == AssetType.ERC721){
             address nftContract = escrows[_id].nftt.nftAddress;
             uint256 tokenID = escrows[_id].nftt.tokenId;
+            (bool okay, )=payable(msg.sender).call{value: fee}("");
+            require(okay);
             IERC721(nftContract).safeTransferFrom(address(this), escrows[_id].buyer, tokenID);
+
         }else if(escrows[_id].asset == AssetType.Native){
+            (bool okay, )=payable(msg.sender).call{value: fee}("");
+            require(okay);
+
             (bool ok, )=payable(escrows[_id].seller).call{value: escrows[_id].amount}("");
             require(ok);
         }else{
