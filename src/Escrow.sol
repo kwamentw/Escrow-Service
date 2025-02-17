@@ -24,8 +24,11 @@ contract Escrow {
     enum AssetType{ERC20, ERC721, Native}
     enum EscrowStatus{NONE, SETTLED, REFUNDED}
 
-    uint256 id;
+    uint256 id; // escrow starting ID
 
+    /**
+     * Details / configuration information of the escrow.
+     */
     struct EscrowInfo {
         address buyer;
         address seller;
@@ -44,18 +47,17 @@ contract Escrow {
         uint256 tokenId;
     }
 
-    // mapping
+    // mappings
     mapping (address user => uint256 id) userToActivEscrow;
     mapping (uint256 id => EscrowInfo escrow) escrows;
     mapping (address user => bool status) arbitrators;
 
-    //storage var
+    // storage vars
     uint256 immutable BASIS_POINT = 1e4;
-    uint256 insurancePool; // i think we should make this var a fee for every txn
-    address owner;// owner of contract
-    IERC20 token; // I think we'll fuck with usdc for now 
-    uint32 arbitratorFeeBPS; // it will 200BPS of every deposit
-    uint256 arbitratorFeeForNFT;
+    address owner; //owner of contract
+    IERC20 token; //I think we'll fuck with usdc for now 
+    uint32 arbitratorFeeBPS; //it will 200BPS of every deposit
+    uint256 arbitratorFeeForNFT; // fee charged in native currency for every deposit
 
     constructor(address _owner, address _token){
         owner = _owner;
@@ -110,7 +112,10 @@ contract Escrow {
 
         id++;
 
-        return(id-1);
+        uint256 currentId = id-1;
+        emit EscrowCreated(currentId);
+
+        return(currentId);
         
     }
 
@@ -139,12 +144,12 @@ contract Escrow {
         escrows[_id].amount = 0;
 
         if(escrows[_id].asset == AssetType.ERC20){
-            if(token.balanceOf(address(this))<escrows[_id].amount){
+            if(token.balanceOf(address(this))<escrows[_id].amount + fee){
                 revert("Insufficient balance");
             }
             token.safeTransferFrom(address(this), msg.sender, fee);
             token.safeTransferFrom(address(this), escrows[_id].seller, escrows[_id].amount);
-            
+
         }else if(escrows[_id].asset == AssetType.ERC721){
             address nftContract = escrows[_id].nftt.nftAddress;
             uint256 tokenID = escrows[_id].nftt.tokenId;
@@ -158,8 +163,6 @@ contract Escrow {
 
             (bool ok, )=payable(escrows[_id].seller).call{value: escrows[_id].amount}("");
             require(ok);
-        }else{
-            revert("Not a valid asset type");
         }
 
         escrows[_id].amount = 0;
@@ -197,12 +200,14 @@ contract Escrow {
             address nftContract = escrows[idd].nftt.nftAddress;
             uint256 tokenID = escrows[idd].nftt.tokenId;
             IERC721(nftContract).safeTransferFrom(address(this), escrows[idd].buyer, tokenID);
+
+            (bool okay,) = payable(msg.sender).call{value: arbitratorFeeForNFT}("");
+            require(okay, "TXN FAILED");
+            delete escrows[idd].nftt;
             escrows[idd].status= EscrowStatus.SETTLED;
         }
 
         userToActivEscrow[msg.sender] = 0;
-        //a percentage of the escrow must go to the contract for maintenance
-
         emit EscrowReleased(idd,amount);
     }
 
