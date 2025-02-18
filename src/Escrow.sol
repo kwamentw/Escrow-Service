@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.25;
+pragma solidity 0.8.26;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -42,6 +42,9 @@ contract Escrow {
         NftInfo nftt;
     }
 
+    /**
+     * @dev Nft escrowed information
+     */
     struct NftInfo{
         address nftAddress;
         uint256 tokenId;
@@ -141,7 +144,6 @@ contract Escrow {
         require(escrows[_id].sellerConfirm == false || escrows[_id].buyerConfirm == false, "Disagreement");
 
         uint256 fee = escrows[_id].arbitratorFee;
-        escrows[_id].amount = 0;
 
         if(escrows[_id].asset == AssetType.ERC20){
             if(token.balanceOf(address(this))<escrows[_id].amount + fee){
@@ -185,7 +187,6 @@ contract Escrow {
             }
             escrows[idd].amount = 0;
             token.safeTransfer(receiver, amount);
-            escrows[idd].status = EscrowStatus.SETTLED;
         }else if(escrows[idd].asset == AssetType.Native){
             if(amount<=address(this).balance){
                 (bool ok, ) = payable(receiver).call{value: amount}("");
@@ -193,9 +194,7 @@ contract Escrow {
             }else{
                 revert("Not enough balance");
             }
-
             escrows[idd].amount=0;
-            escrows[idd].status = EscrowStatus.SETTLED;
         }else{
             address nftContract = escrows[idd].nftt.nftAddress;
             uint256 tokenID = escrows[idd].nftt.tokenId;
@@ -204,9 +203,10 @@ contract Escrow {
             (bool okay,) = payable(msg.sender).call{value: arbitratorFeeForNFT}("");
             require(okay, "TXN FAILED");
             delete escrows[idd].nftt;
-            escrows[idd].status= EscrowStatus.SETTLED;
+            
         }
 
+        escrows[idd].status= EscrowStatus.SETTLED;
         userToActivEscrow[msg.sender] = 0;
         emit EscrowReleased(idd,amount);
     }
