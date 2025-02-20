@@ -15,21 +15,40 @@ contract EscrowTest is Test{
         mocknft = new MockNFT();
     }
 
-    function test_canCreateEscrow() public {
+    function createNativeEscrow() public payable returns(uint256 _id) {
+        
         Escrow.EscrowInfo memory firstEscrow;
+        // mocknft.mint(firstEscrow.seller,1);
+
         firstEscrow.buyer = address(0xabc);
         firstEscrow.seller = address(0xbac);
         firstEscrow.asset = Escrow.AssetType.Native;
         firstEscrow.amount = 50e18;
         firstEscrow.deadline = block.timestamp + 30 days;
-        firstEscrow.arbitratorFee = 0;
+        firstEscrow.arbitratorFee = 1e18;
         firstEscrow.buyerConfirm = false;
         firstEscrow.sellerConfirm = false;
         firstEscrow.status = Escrow.EscrowStatus.NONE;
         firstEscrow.nftt = Escrow.NftInfo({
-            nftAddress: address(mocknft),
-            tokenId: 1 // mint a token id to seller and insert the right ID
+            nftAddress: address(0),
+            tokenId: 0 // mint a token id to seller and insert the right ID
         });
-        // escrow.createEscrow();
+        deal(address(0xbac), 1004e18);
+
+        vm.prank(address(0xbac));
+        _id = escrow.createEscrow{value: firstEscrow.amount + firstEscrow.arbitratorFee}(firstEscrow);
+    }
+
+    function test_canCreateNativeEscrow() public {
+ 
+        uint256 id = createNativeEscrow();
+
+        Escrow.EscrowInfo memory firstNatEscrow = escrow.getUserEscrow(id);
+
+        assertEq(firstNatEscrow.buyer, address(0xabc));
+        assertNotEq(firstNatEscrow.deadline,0);
+        assertEq(firstNatEscrow.amount, 50e18);
+
+        
     }
 }

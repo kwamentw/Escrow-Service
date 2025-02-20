@@ -87,8 +87,7 @@ contract Escrow {
         require(newEscrow.amount > 0);
         require(newEscrow.deadline > block.timestamp);
         require(newEscrow.status == EscrowStatus.NONE);
-        require(newEscrow.nftt.nftAddress != address(0));
-
+        
         userToActivEscrow[msg.sender] = id;
         uint256 arbitratorFee = arbitratorFeeBPS * newEscrow.amount / BASIS_POINT;
 
@@ -100,11 +99,13 @@ contract Escrow {
             escrows[id] = newEscrow;
             
         }else if(newEscrow.asset == AssetType.Native){
-            require(msg.value == newEscrow.amount + arbitratorFee);
+            require(msg.value == newEscrow.amount + arbitratorFee,"heyy");
             newEscrow.arbitratorFee = arbitratorFee;
             escrows[id] = newEscrow;
         }else if(newEscrow.asset == AssetType.ERC721){
             require(msg.value == arbitratorFeeForNFT, "arbitrator Fees not paid");
+            require(newEscrow.nftt.nftAddress != address(0));
+
             address nftcontract = newEscrow.nftt.nftAddress;
             uint256 tokenID = newEscrow.nftt.tokenId;
             require(IERC721(nftcontract).ownerOf(tokenID)==newEscrow.seller,"Trying to sell what is not yours");
@@ -209,6 +210,14 @@ contract Escrow {
         escrows[idd].status= EscrowStatus.SETTLED;
         userToActivEscrow[msg.sender] = 0;
         emit EscrowReleased(idd,amount);
+    }
+
+    function getEscrowId(address user) external view returns(uint256) {
+        return userToActivEscrow[user];
+    }
+
+    function getUserEscrow(uint256 escrowId) external view returns(EscrowInfo memory){
+        return escrows[escrowId];
     }
 
     function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata data) external view returns(bytes4){

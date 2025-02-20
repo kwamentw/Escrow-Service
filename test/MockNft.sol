@@ -9,4 +9,10 @@ contract MockNFT is ERC721{
         
     }
 
+    function _safeMint(address to, uint256 id)  internal override{}
+
+    function mint(address to, uint256 id) public{
+        _safeMint(to,id);
+    }
+
 }
