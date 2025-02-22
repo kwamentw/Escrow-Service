@@ -11,7 +11,7 @@ import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Recei
  * @author 4B
  * @notice Standard escrow contract
  */
-contract Escrow {
+contract Escrow{
     using SafeERC20 for IERC20;
 
     // events
@@ -98,26 +98,53 @@ contract Escrow {
             newEscrow.arbitratorFee = arbitratorFee;
             escrows[id] = newEscrow;
             
-        }else if(newEscrow.asset == AssetType.Native){
+        }
+
+        if(newEscrow.asset == AssetType.Native){
             require(msg.value == newEscrow.amount + arbitratorFee,"heyy");
             newEscrow.arbitratorFee = arbitratorFee;
             escrows[id] = newEscrow;
-        }else if(newEscrow.asset == AssetType.ERC721){
-            require(msg.value == arbitratorFeeForNFT, "arbitrator Fees not paid");
-            require(newEscrow.nftt.nftAddress != address(0));
-            require(newEscrow.amount == 0, "no need to deposit tokens");
-
-            address nftcontract = newEscrow.nftt.nftAddress;
-            uint256 tokenID = newEscrow.nftt.tokenId;
-            require(IERC721(nftcontract).ownerOf(tokenID)==newEscrow.seller,"Trying to sell what is not yours");
-            IERC721(nftcontract).safeTransferFrom(msg.sender,address(this),tokenID);
-            newEscrow.arbitratorFee = arbitratorFeeForNFT;
-            escrows[id] = newEscrow;
         }
+        uint256 currentId = id;
 
         id++;
 
-        uint256 currentId = id-1;
+        emit EscrowCreated(currentId);
+
+        return(currentId);
+        
+    }
+
+    //TODO: create a different functio to escrow nfts
+    function create721Escrow(EscrowInfo memory newEscrow) external  payable returns(uint256){
+        require(escrows[id].buyer == address(0));
+        require(newEscrow.buyer != address(0));
+        require(newEscrow.seller != address(0));
+        require(newEscrow.amount > 0);
+        require(newEscrow.deadline > block.timestamp);
+        require(newEscrow.status == EscrowStatus.NONE);
+        
+        userToActivEscrow[msg.sender] = id;
+
+
+        if(newEscrow.asset != AssetType.ERC721){ revert ("Incorrect asset");}
+
+        address nftcontract = newEscrow.nftt.nftAddress;
+        uint256 tokenID = newEscrow.nftt.tokenId;
+        require(msg.value == arbitratorFeeForNFT, "arbitrator Fees not paid");
+        require(newEscrow.nftt.nftAddress != address(0),"yy");
+        require(newEscrow.amount == 0, "no need to deposit tokens");
+        require(IERC721(nftcontract).ownerOf(tokenID)==newEscrow.seller,"Trying to sell what is not yours");
+        IERC721(nftcontract).transferFrom(newEscrow.seller,address(this),tokenID);
+        newEscrow.arbitratorFee = arbitratorFeeForNFT;
+
+
+        escrows[id] = newEscrow;
+
+        uint256 currentId = id;
+
+        id++;
+
         emit EscrowCreated(currentId);
 
         return(currentId);

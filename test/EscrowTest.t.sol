@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {Escrow} from "../src/Escrow.sol";
 import {MockNFT} from "./MockNft.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 contract EscrowTest is Test{
     Escrow escrow;
@@ -18,7 +19,6 @@ contract EscrowTest is Test{
     function createNativeEscrow() public payable returns(uint256 _id) {
         
         Escrow.EscrowInfo memory firstEscrow;
-        // mocknft.mint(firstEscrow.seller,1);
 
         firstEscrow.buyer = address(0xabc);
         firstEscrow.seller = address(0xbac);
@@ -41,7 +41,7 @@ contract EscrowTest is Test{
 
     function createNftEscrow() public returns(uint256 id){
         Escrow.EscrowInfo memory firstEscrow;
-        mocknft.mint(firstEscrow.seller,1);
+        mocknft.mint(address(0xbac),2223);
 
         firstEscrow.buyer = address(0xabc);
         firstEscrow.seller = address(0xbac);
@@ -54,14 +54,14 @@ contract EscrowTest is Test{
         firstEscrow.status = Escrow.EscrowStatus.NONE;
         firstEscrow.nftt = Escrow.NftInfo({
             nftAddress: address(mocknft),
-            tokenId: 1 // mint a token id to seller and insert the right ID
+            tokenId: 2223 // mint a token id to seller and insert the right ID
         });
         deal(address(0xbac), 1004e18);
 
         vm.prank(address(0xbac));
-        _id = escrow.createEscrow{value:firstEscrow.arbitratorFee}(firstEscrow);
+        id = escrow.create721Escrow{value:firstEscrow.arbitratorFee}(firstEscrow);
     }
-    }
+
 
     function test_canCreateNativeEscrow() public {
  
@@ -74,5 +74,10 @@ contract EscrowTest is Test{
         assertEq(firstNatEscrow.amount, 50e18);
 
         
+    }
+
+    function testCanCreate721Escrow() public{
+        uint256 id = createNftEscrow();
+
     }
 }
