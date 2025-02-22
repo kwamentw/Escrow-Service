@@ -105,6 +105,7 @@ contract Escrow {
         }else if(newEscrow.asset == AssetType.ERC721){
             require(msg.value == arbitratorFeeForNFT, "arbitrator Fees not paid");
             require(newEscrow.nftt.nftAddress != address(0));
+            require(newEscrow.amount == 0, "no need to deposit tokens");
 
             address nftcontract = newEscrow.nftt.nftAddress;
             uint256 tokenID = newEscrow.nftt.tokenId;

@@ -39,6 +39,30 @@ contract EscrowTest is Test{
         _id = escrow.createEscrow{value: firstEscrow.amount + firstEscrow.arbitratorFee}(firstEscrow);
     }
 
+    function createNftEscrow() public returns(uint256 id){
+        Escrow.EscrowInfo memory firstEscrow;
+        mocknft.mint(firstEscrow.seller,1);
+
+        firstEscrow.buyer = address(0xabc);
+        firstEscrow.seller = address(0xbac);
+        firstEscrow.asset = Escrow.AssetType.ERC721;
+        firstEscrow.amount = 0;
+        firstEscrow.deadline = block.timestamp + 30 days;
+        firstEscrow.arbitratorFee = 0.001e18;
+        firstEscrow.buyerConfirm = false;
+        firstEscrow.sellerConfirm = false;
+        firstEscrow.status = Escrow.EscrowStatus.NONE;
+        firstEscrow.nftt = Escrow.NftInfo({
+            nftAddress: address(mocknft),
+            tokenId: 1 // mint a token id to seller and insert the right ID
+        });
+        deal(address(0xbac), 1004e18);
+
+        vm.prank(address(0xbac));
+        _id = escrow.createEscrow{value:firstEscrow.arbitratorFee}(firstEscrow);
+    }
+    }
+
     function test_canCreateNativeEscrow() public {
  
         uint256 id = createNativeEscrow();
