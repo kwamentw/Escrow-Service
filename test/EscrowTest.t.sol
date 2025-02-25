@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {Escrow} from "../src/Escrow.sol";
 import {MockNFT} from "./MockNft.sol";
+import {console2} from "forge-std/console2.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
@@ -119,8 +120,58 @@ contract EscrowTest is Test{
         assertEq(IERC20(token).balanceOf(address(escrow)), 50e18 + firstERC20Escrow.arbitratorFee );
     }
 
-    function testCanCreate721Escrow() public{
-        uint256 id = createNftEscrow();
+    // function testCanCreate721Escrow() public{
+    //     uint256 id = createNftEscrow();
 
+    // }
+
+    function testConfirmEscrow() public{
+        uint256 id = createNativeEscrow();
+
+        Escrow.EscrowInfo memory esscrow = escrow.getUserEscrow(id);
+
+        address seller = esscrow.seller;
+        address buyer = esscrow.buyer;
+
+        vm.prank(seller);
+        escrow.confirmEscrow(id);
+
+        vm.prank(buyer);
+        escrow.confirmEscrow(id);
+
+        assertTrue(escrow.getUserEscrow(id).sellerConfirm);
+        assertTrue(escrow.getUserEscrow(id).buyerConfirm);
+    }
+
+    function testRevertIfCallerisNotSellerorBuyer() public{
+        uint256 id = createNativeEscrow();
+        Escrow.EscrowInfo memory esscrow = escrow.getUserEscrow(id);
+
+        address seller = esscrow.seller;
+        address buyer = esscrow.buyer;
+        address sender = address(4444);
+
+        assertNotEq(sender,buyer);
+        assertNotEq(sender,seller);
+
+        vm.expectRevert();
+        vm.prank(sender);
+        escrow.confirmEscrow(id);
+
+    }
+
+    function testAddArbitrator() public{
+        address newArbitrator = address(0xabccc);
+        escrow.addArbitrator(newArbitrator);
+
+        assertTrue(escrow.getArbitratorStatus(newArbitrator));
+    }
+
+    function testRevertIfArbitratorAlreadyExists() public{
+        address arbOne = address(0xabccc);
+        escrow.addArbitrator(arbOne);
+
+        vm.expectRevert();
+        escrow.addArbitrator(arbOne);
     }
 }

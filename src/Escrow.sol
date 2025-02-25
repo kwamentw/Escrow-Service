@@ -116,7 +116,7 @@ contract Escrow{
         
     }
 
-    //TODO: create a different functio to escrow nfts
+    //TODO: probe the error
     function create721Escrow(EscrowInfo memory newEscrow) external  payable returns(uint256){
         require(escrows[id].buyer == address(0));
         require(newEscrow.buyer != address(0));
@@ -247,6 +247,10 @@ contract Escrow{
 
     function getUserEscrow(uint256 escrowId) external view returns(EscrowInfo memory){
         return escrows[escrowId];
+    }
+
+    function getArbitratorStatus(address arb) external view returns(bool){
+        return arbitrators[arb];
     }
 
     function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata data) external view returns(bytes4){
