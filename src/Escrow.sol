@@ -92,10 +92,11 @@ contract Escrow{
         uint256 arbitratorFee = arbitratorFeeBPS * newEscrow.amount / BASIS_POINT;
 
         if(newEscrow.asset == AssetType.ERC20){
+            newEscrow.arbitratorFee = arbitratorFee;
             if(token.balanceOf(newEscrow.seller ) < newEscrow.amount + arbitratorFee){ revert("Not Enough Funds"); }
             token.safeTransferFrom(newEscrow.seller ,address(this), newEscrow.amount);
             token.safeTransferFrom(newEscrow.seller , address(this), arbitratorFee);
-            newEscrow.arbitratorFee = arbitratorFee;
+            
             escrows[id] = newEscrow;
             
         }

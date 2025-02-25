@@ -109,6 +109,14 @@ contract EscrowTest is Test{
 
     function testCanCreateE20Escrow() public{
         uint256 id = createERC20Escrow();
+
+        Escrow.EscrowInfo memory firstERC20Escrow = escrow.getUserEscrow(id);
+
+        assertEq(firstERC20Escrow.buyer, address(0xabc));
+        assertNotEq(firstERC20Escrow.deadline,0);
+        assertNotEq(firstERC20Escrow.seller, address(0));
+        assertEq(firstERC20Escrow.amount, 50e18);
+        assertEq(IERC20(token).balanceOf(address(escrow)), 50e18 + firstERC20Escrow.arbitratorFee );
     }
 
     function testCanCreate721Escrow() public{
