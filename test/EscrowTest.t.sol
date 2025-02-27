@@ -174,4 +174,16 @@ contract EscrowTest is Test{
         vm.expectRevert();
         escrow.addArbitrator(arbOne);
     }
+
+    function testRefundEscrow() public{
+
+    }
+
+    function testCannotRefundEscrow public{}
+
+    function testReleaseEcrow() public{
+
+    }
+
+    function testCannotReleaseEscrow() public{}
 }
