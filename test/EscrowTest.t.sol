@@ -35,9 +35,9 @@ contract EscrowTest is Test{
             nftAddress: address(0),
             tokenId: 0 // mint a token id to seller and insert the right ID
         });
-        deal(address(0xbac), 1004e18);
+        deal(address(0xabc), firstEscrow.amount + firstEscrow.arbitratorFee);
 
-        vm.prank(address(0xbac));
+        vm.prank(address(0xabc));
         _id = escrow.createEscrow{value: firstEscrow.amount + firstEscrow.arbitratorFee}(firstEscrow);
     }
 
@@ -59,12 +59,12 @@ contract EscrowTest is Test{
             tokenId: 0 // mint a token id to seller and insert the right ID
         });
         // deal(address(0xbac), 1004e18);
-        deal(address(token), address(0xbac), 10000e18);
+        deal(address(token), address(0xabc), 10000e18);
 
-        vm.prank(address(0xbac));
+        vm.prank(address(0xabc));
         IERC20(token).approve(address(escrow), type(uint256).max);
 
-        vm.prank(address(0xbac));
+        vm.prank(address(0xabc));
         _id = escrow.createEscrow(firstEscrow);
     }
 
@@ -85,12 +85,12 @@ contract EscrowTest is Test{
             nftAddress: address(mocknft),
             tokenId: 2223 // mint a token id to seller and insert the right ID
         });
-        deal(address(0xbac), 1004e18);
+        deal(address(0xabc), 1004e18);
 
-        vm.prank(address(0xbac));
+        vm.prank(address(0xabc));
         IERC721(mocknft).approve(address(escrow), 2223);
 
-        vm.prank(address(0xbac));
+        vm.prank(address(0xabc));
         id = escrow.create721Escrow(firstEscrow);
     }
 
@@ -104,6 +104,7 @@ contract EscrowTest is Test{
         assertEq(firstNatEscrow.buyer, address(0xabc));
         assertNotEq(firstNatEscrow.deadline,0);
         assertEq(firstNatEscrow.amount, 50e18);
+        //todo: should add a balance check
 
         
     }
@@ -176,13 +177,31 @@ contract EscrowTest is Test{
     }
 
     function testRefundEscrow() public{
+        uint256 id = createNativeEscrow();
+        vm.warp(32 days);
 
+        escrow.addArbitrator(address(0xfff));
+
+        uint256 balBefore = address(0xabc).balance;
+
+        vm.prank(address(0xfff));
+        escrow.refundEscrow(id);
+        
+        uint256 balAfter = address(0xabc).balance;
+
+        assertGt(balAfter, balBefore);
+        assertGt(address(0xfff).balance, 0);
+
+        bool refund;
+        if(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.REFUNDED){ refund = true;}
+        assertTrue(refund);
     }
 
-    function testCannotRefundEscrow public{}
+
+    function testCannotRefundEscrow() public{}
 
     function testReleaseEcrow() public{
-
+        
     }
 
     function testCannotReleaseEscrow() public{}

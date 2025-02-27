@@ -94,8 +94,8 @@ contract Escrow{
         if(newEscrow.asset == AssetType.ERC20){
             newEscrow.arbitratorFee = arbitratorFee;
             if(token.balanceOf(newEscrow.seller ) < newEscrow.amount + arbitratorFee){ revert("Not Enough Funds"); }
-            token.safeTransferFrom(newEscrow.seller ,address(this), newEscrow.amount);
-            token.safeTransferFrom(newEscrow.seller , address(this), arbitratorFee);
+            token.safeTransferFrom(newEscrow.buyer,address(this), newEscrow.amount);
+            token.safeTransferFrom(newEscrow.buyer , address(this), arbitratorFee);
             
             escrows[id] = newEscrow;
             
@@ -135,8 +135,8 @@ contract Escrow{
         require(msg.value == arbitratorFeeForNFT, "arbitrator Fees not paid");
         require(newEscrow.nftt.nftAddress != address(0),"yy");
         require(newEscrow.amount == 0, "no need to deposit tokens");
-        require(IERC721(nftcontract).ownerOf(tokenID)==newEscrow.seller,"Trying to sell what is not yours");
-        IERC721(nftcontract).transferFrom(newEscrow.seller,address(this),tokenID);
+        require(IERC721(nftcontract).ownerOf(tokenID)==newEscrow.buyer,"Trying to sell what is not yours");
+        IERC721(nftcontract).transferFrom(newEscrow.buyer,address(this),tokenID);
         newEscrow.arbitratorFee = arbitratorFeeForNFT;
 
 
@@ -180,7 +180,7 @@ contract Escrow{
                 revert("Insufficient balance");
             }
             token.safeTransferFrom(address(this), msg.sender, fee);
-            token.safeTransferFrom(address(this), escrows[_id].seller, escrows[_id].amount);
+            token.safeTransferFrom(address(this), escrows[_id].buyer, escrows[_id].amount);
 
         }else if(escrows[_id].asset == AssetType.ERC721){
             address nftContract = escrows[_id].nftt.nftAddress;
@@ -193,7 +193,7 @@ contract Escrow{
             (bool okay, )=payable(msg.sender).call{value: fee}("");
             require(okay);
 
-            (bool ok, )=payable(escrows[_id].seller).call{value: escrows[_id].amount}("");
+            (bool ok, )=payable(escrows[_id].buyer).call{value: escrows[_id].amount}("");
             require(ok);
         }
 
@@ -209,7 +209,7 @@ contract Escrow{
         require(escrows[idd].sellerConfirm == true && escrows[idd].buyerConfirm == true, "Can't release escrow");
         // send tokens to receiver but check which token type before
         uint256 amount = escrows[idd].amount;
-        address receiver = escrows[idd].buyer;
+        address receiver = escrows[idd].seller;
 
         if(escrows[idd].asset == AssetType.ERC20){
             if(amount > token.balanceOf(address(this))){
@@ -228,7 +228,7 @@ contract Escrow{
         }else{
             address nftContract = escrows[idd].nftt.nftAddress;
             uint256 tokenID = escrows[idd].nftt.tokenId;
-            IERC721(nftContract).safeTransferFrom(address(this), escrows[idd].buyer, tokenID);
+            IERC721(nftContract).safeTransferFrom(address(this), escrows[idd].seller, tokenID);
 
             (bool okay,) = payable(msg.sender).call{value: arbitratorFeeForNFT}("");
             require(okay, "TXN FAILED");
