@@ -201,7 +201,28 @@ contract EscrowTest is Test{
     function testCannotRefundEscrow() public{}
 
     function testReleaseEcrow() public{
-        
+        uint256 id = createNativeEscrow();
+        vm.warp(20 days);
+
+        vm.prank(address(0xabc));
+        escrow.confirmEscrow(id);
+
+        vm.prank(address(0xbac));
+        escrow.confirmEscrow(id);
+
+        escrow.addArbitrator(address(0xfff));
+
+        uint256 balbef = address(0xbac).balance;
+
+        vm.prank(address(0xfff));
+        escrow.releaseEscrow(id);
+
+        uint256 balAfter = address(0xbac).balance;
+
+        assertGt(balAfter,balbef);
+        bool released;
+        if(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.SETTLED){released = true;}
+        assertTrue(released);
     }
 
     function testCannotReleaseEscrow() public{}
