@@ -18,6 +18,8 @@ contract EscrowTest is Test{
         mocknft = new MockNFT();
     }
 
+    ////////////// CREATE FUNCTIONS ////////////////
+
     function createNativeEscrow() public payable returns(uint256 _id) {
         
         Escrow.EscrowInfo memory firstEscrow;
@@ -94,6 +96,7 @@ contract EscrowTest is Test{
         id = escrow.create721Escrow(firstEscrow);
     }
 
+    ///////////////////// TEST FUNCTIONS //////////////////////////
 
     function test_canCreateNativeEscrow() public {
  
