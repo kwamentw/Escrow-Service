@@ -198,7 +198,51 @@ contract EscrowTest is Test{
     }
 
 
-    function testCannotRefundEscrow() public{}
+    function testCannotRefundDeadlineHasntReached() public{
+        uint256 id = createNativeEscrow();
+        vm.warp(5 days);
+
+        escrow.addArbitrator(address(0xfff));
+
+        vm.expectRevert();
+        vm.prank(address(0xfff));
+        escrow.refundEscrow(id);
+    }
+
+    function testRevertRefundIfAllUsersConfirm() public{
+        uint256 id = createNativeEscrow();
+        vm.warp(3 days);
+
+        escrow.addArbitrator(address(0xfff));
+
+        vm.prank(address(0xabc));
+        escrow.confirmEscrow(id);
+
+        vm.prank(address(0xbac));
+        escrow.confirmEscrow(id);
+
+        vm.warp(33 days);
+
+        vm.expectRevert();
+        vm.prank(address(0xfff));
+        escrow.refundEscrow(id);
+    }
+
+    function testRevertAlreadyRefunded() public{
+
+        uint256 id = createNativeEscrow();
+        vm.warp(32 days);
+
+        escrow.addArbitrator(address(0xfff));
+
+        vm.prank(address(0xfff));
+        escrow.refundEscrow(id);
+
+        vm.expectRevert(); // it will will revert wil "alreadyRefunded" hence test passing
+        vm.prank(address(0xfff));
+        escrow.refundEscrow(id);
+
+    }
 
     function testReleaseEcrow() public{
         uint256 id = createNativeEscrow();
@@ -225,5 +269,19 @@ contract EscrowTest is Test{
         assertTrue(released);
     }
 
-    function testCannotReleaseEscrow() public{}
+    function testCannotReleaseEscrow() public{
+        uint256 id= createNativeEscrow();
+        vm.warp(20 days);
+
+        vm.prank(address(0xabc));
+        escrow.confirmEscrow(id);
+
+        // lets make only one user confirm to trigger the error
+
+        escrow.addArbitrator(address(0xfff));
+
+        vm.expectRevert();
+        vm.prank(address(0xfff));
+        escrow.releaseEscrow(id);
+    }
 }
