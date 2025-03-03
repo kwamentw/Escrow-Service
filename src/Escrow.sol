@@ -39,16 +39,18 @@ contract Escrow{
         bool buyerConfirm;
         bool sellerConfirm;
         EscrowStatus status;
-        NftInfo nftt;
+        // NftInfo nftt;
+        address nftAddress;
+        uint256 tokenId;
     }
 
     /**
      * @dev Nft escrowed information
      */
-    struct NftInfo{
-        address nftAddress;
-        uint256 tokenId;
-    }
+    // struct NftInfo{
+    //     address nftAddress;
+    //     uint256 tokenId;
+    // }
 
     // mappings
     mapping (address user => uint256 id) userToActivEscrow;
@@ -79,6 +81,8 @@ contract Escrow{
         require(msg.sender == owner,"Not Authorised");
         _;
     }
+
+    // TODO: Change buyer and seller to depositor and receiverr to make it less confusing
 
     function createEscrow(EscrowInfo memory newEscrow) external  payable returns(uint256){
         require(escrows[id].buyer == address(0));
@@ -116,24 +120,23 @@ contract Escrow{
         
     }
 
-    //TODO: probe the error
+ 
     function create721Escrow(EscrowInfo memory newEscrow) external  payable returns(uint256){
-        require(escrows[id].buyer == address(0));
-        require(newEscrow.buyer != address(0));
-        require(newEscrow.seller != address(0));
-        require(newEscrow.amount > 0);
-        require(newEscrow.deadline > block.timestamp);
-        require(newEscrow.status == EscrowStatus.NONE);
+        require(escrows[id].buyer == address(0),"f");
+        require(newEscrow.buyer != address(0),"e");
+        require(newEscrow.seller != address(0),"d");
+        require(newEscrow.deadline > block.timestamp,"b");
+        require(newEscrow.status == EscrowStatus.NONE,"a");
         
         userToActivEscrow[msg.sender] = id;
 
 
         if(newEscrow.asset != AssetType.ERC721){ revert ("Incorrect asset");}
 
-        address nftcontract = newEscrow.nftt.nftAddress;
-        uint256 tokenID = newEscrow.nftt.tokenId;
+        address nftcontract = newEscrow.nftAddress;
+        uint256 tokenID = newEscrow.tokenId;
         require(msg.value == arbitratorFeeForNFT, "arbitrator Fees not paid");
-        require(newEscrow.nftt.nftAddress != address(0),"yy");
+        require(newEscrow.nftAddress != address(0),"yy");
         require(newEscrow.amount == 0, "no need to deposit tokens");
         require(IERC721(nftcontract).ownerOf(tokenID)==newEscrow.buyer,"Trying to sell what is not yours");
         IERC721(nftcontract).transferFrom(newEscrow.buyer,address(this),tokenID);
@@ -183,8 +186,8 @@ contract Escrow{
             token.safeTransferFrom(address(this), escrows[_id].buyer, escrows[_id].amount);
 
         }else if(escrows[_id].asset == AssetType.ERC721){
-            address nftContract = escrows[_id].nftt.nftAddress;
-            uint256 tokenID = escrows[_id].nftt.tokenId;
+            address nftContract = escrows[_id].nftAddress;
+            uint256 tokenID = escrows[_id].tokenId;
             (bool okay, )=payable(msg.sender).call{value: fee}("");
             require(okay);
             IERC721(nftContract).safeTransferFrom(address(this), escrows[_id].buyer, tokenID);
@@ -226,13 +229,13 @@ contract Escrow{
             }
             escrows[idd].amount=0;
         }else{
-            address nftContract = escrows[idd].nftt.nftAddress;
-            uint256 tokenID = escrows[idd].nftt.tokenId;
+            address nftContract = escrows[idd].nftAddress;
+            uint256 tokenID = escrows[idd].tokenId;
             IERC721(nftContract).safeTransferFrom(address(this), escrows[idd].seller, tokenID);
 
             (bool okay,) = payable(msg.sender).call{value: arbitratorFeeForNFT}("");
             require(okay, "TXN FAILED");
-            delete escrows[idd].nftt;
+            delete escrows[idd];
             
         }
 
@@ -256,7 +259,7 @@ contract Escrow{
     function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata data) external view returns(bytes4){
         require(userToActivEscrow[operator] != 0, "Nft can only be sent by the seller");
         uint256 escrowId = userToActivEscrow[operator];
-        require(escrows[escrowId].nftt.tokenId == tokenId, " User trying to send a different token");
+        require(escrows[escrowId].tokenId == tokenId, " User trying to send a different token");
         return this.onERC721Received.selector;
     }
 }

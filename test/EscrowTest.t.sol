@@ -33,10 +33,9 @@ contract EscrowTest is Test{
         firstEscrow.buyerConfirm = false;
         firstEscrow.sellerConfirm = false;
         firstEscrow.status = Escrow.EscrowStatus.NONE;
-        firstEscrow.nftt = Escrow.NftInfo({
-            nftAddress: address(0),
-            tokenId: 0 // mint a token id to seller and insert the right ID
-        });
+        firstEscrow.nftAddress = address(mocknft);
+        firstEscrow.tokenId = 2223;
+
         deal(address(0xabc), firstEscrow.amount + firstEscrow.arbitratorFee);
 
         vm.prank(address(0xabc));
@@ -56,11 +55,9 @@ contract EscrowTest is Test{
         firstEscrow.buyerConfirm = false;
         firstEscrow.sellerConfirm = false;
         firstEscrow.status = Escrow.EscrowStatus.NONE;
-        firstEscrow.nftt = Escrow.NftInfo({
-            nftAddress: address(0),
-            tokenId: 0 // mint a token id to seller and insert the right ID
-        });
-        // deal(address(0xbac), 1004e18);
+        firstEscrow.nftAddress = address(mocknft);
+        firstEscrow.tokenId = 2223;
+
         deal(address(token), address(0xabc), 10000e18);
 
         vm.prank(address(0xabc));
@@ -72,7 +69,7 @@ contract EscrowTest is Test{
 
     function createNftEscrow() public returns(uint256 id){
         Escrow.EscrowInfo memory firstEscrow;
-        mocknft.mint(address(0xbac),2223);
+        mocknft.mint(address(0xabc),2223);
 
         firstEscrow.buyer = address(0xabc);
         firstEscrow.seller = address(0xbac);
@@ -83,17 +80,15 @@ contract EscrowTest is Test{
         firstEscrow.buyerConfirm = false;
         firstEscrow.sellerConfirm = false;
         firstEscrow.status = Escrow.EscrowStatus.NONE;
-        firstEscrow.nftt = Escrow.NftInfo({
-            nftAddress: address(mocknft),
-            tokenId: 2223 // mint a token id to seller and insert the right ID
-        });
+        firstEscrow.nftAddress = address(mocknft);
+        firstEscrow.tokenId = 2223;
         deal(address(0xabc), 1004e18);
 
         vm.prank(address(0xabc));
         IERC721(mocknft).approve(address(escrow), 2223);
 
         vm.prank(address(0xabc));
-        id = escrow.create721Escrow(firstEscrow);
+        id = escrow.create721Escrow{value: 0.001e18}(firstEscrow);
     }
 
     ///////////////////// TEST FUNCTIONS //////////////////////////
@@ -124,10 +119,16 @@ contract EscrowTest is Test{
         assertEq(IERC20(token).balanceOf(address(escrow)), 50e18 + firstERC20Escrow.arbitratorFee );
     }
 
-    // function testCanCreate721Escrow() public{
-    //     uint256 id = createNftEscrow();
+    function testCanCreate721Escrow() public{
+        uint256 id = createNftEscrow();
 
-    // }
+        Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
+
+        assertEq(IERC721(mocknft).balanceOf(address(escrow)),1);
+        assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), address(escrow));
+        assertNotEq(firstNftEscrow.nftAddress, address(0));
+
+    }
 
     function testConfirmEscrow() public{
         uint256 id = createNativeEscrow();
