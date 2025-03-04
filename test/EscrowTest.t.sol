@@ -93,20 +93,6 @@ contract EscrowTest is Test{
 
     ///////////////////// TEST FUNCTIONS //////////////////////////
 
-    function test_canCreateNativeEscrow() public {
- 
-        uint256 id = createNativeEscrow();
-
-        Escrow.EscrowInfo memory firstNatEscrow = escrow.getUserEscrow(id);
-
-        assertEq(firstNatEscrow.buyer, address(0xabc));
-        assertNotEq(firstNatEscrow.deadline,0);
-        assertEq(firstNatEscrow.amount, 50e18);
-        //todo: should add a balance check
-
-        
-    }
-
     function testCanCreateE20Escrow() public{
         uint256 id = createERC20Escrow();
 
@@ -128,6 +114,64 @@ contract EscrowTest is Test{
         assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), address(escrow));
         assertNotEq(firstNftEscrow.nftAddress, address(0));
 
+    }
+
+    function testCanRefund721() public{
+        uint256 id = createNftEscrow();
+
+        Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
+
+        assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), address(escrow));
+
+        // we have to make sure only one party confirms
+
+        vm.prank(firstNftEscrow.buyer);
+        escrow.confirmEscrow(id);
+
+        escrow.addArbitrator(address(0xfff));
+
+        vm.warp(32 days);
+        vm.prank(address(0xfff));
+        escrow.refundEscrow(id);
+
+        assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), firstNftEscrow.buyer);
+        assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.REFUNDED);
+    }
+
+    function testCanRelease721() public{
+        uint256 id = createNftEscrow();
+
+        Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
+
+        assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), address(escrow));
+
+        vm.prank(firstNftEscrow.buyer);
+        escrow.confirmEscrow(id);
+
+        vm.prank(firstNftEscrow.seller);
+        escrow.confirmEscrow(id);
+
+        escrow.addArbitrator(address(0xccc));
+
+        vm.prank(address(0xccc));
+        escrow.releaseEscrow(id);
+
+        assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), firstNftEscrow.seller);
+        assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.SETTLED);
+    }
+
+    function test_canCreateNativeEscrow() public {
+ 
+        uint256 id = createNativeEscrow();
+
+        Escrow.EscrowInfo memory firstNatEscrow = escrow.getUserEscrow(id);
+
+        assertEq(firstNatEscrow.buyer, address(0xabc));
+        assertNotEq(firstNatEscrow.deadline,0);
+        assertEq(firstNatEscrow.amount, 50e18);
+        //todo: should add a balance check
+
+        
     }
 
     function testConfirmEscrow() public{
