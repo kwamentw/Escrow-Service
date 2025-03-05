@@ -42,7 +42,7 @@ contract EscrowTest is Test{
         _id = escrow.createEscrow{value: firstEscrow.amount + firstEscrow.arbitratorFee}(firstEscrow);
     }
 
-        function createERC20Escrow() public payable returns(uint256 _id) {
+    function createERC20Escrow() public payable returns(uint256 _id) {
         
         Escrow.EscrowInfo memory firstEscrow;
 
@@ -116,6 +116,8 @@ contract EscrowTest is Test{
 
     }
 
+    //TODO: Test to see whether many escrows can be created at once
+
     function testCanRefund721() public{
         uint256 id = createNftEscrow();
 
@@ -138,6 +140,9 @@ contract EscrowTest is Test{
         assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.REFUNDED);
     }
 
+    //TODO: cannnot refund because the two parties have confirmed
+    //TODO: cannot because deadline not reached parties stil have sometime to catch an agreement
+
     function testCanRelease721() public{
         uint256 id = createNftEscrow();
 
@@ -158,6 +163,24 @@ contract EscrowTest is Test{
 
         assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), firstNftEscrow.seller);
         assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.SETTLED);
+    }
+
+    //TODO: cannot release because the two parites disagreed
+    function testRevertWhenReleasingDueToDisagreement() public{
+        uint256 id = createNftEscrow();
+
+        Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
+
+        // let's assume only the seller agrees 
+        vm.prank(firstNftEscrow.seller);
+        escrow.confirmEscrow(id);
+
+        //add arbitrator who will call the release
+        escrow.addArbitrator(address(0xCCC));
+
+        vm.expectRevert();
+        vm.prank(address(0xCCC));
+        escrow.releaseEscrow(id);
     }
 
     function test_canCreateNativeEscrow() public {
@@ -190,6 +213,25 @@ contract EscrowTest is Test{
 
         assertTrue(escrow.getUserEscrow(id).sellerConfirm);
         assertTrue(escrow.getUserEscrow(id).buyerConfirm);
+    }
+
+    //TODO: cannot confirm because deadline has reached
+    function testRevertConfirmationDeadlineReached() public{
+        uint256 id = createNativeEscrow();
+
+        Escrow.EscrowInfo memory escrowCon = escrow.getUserEscrow(id);
+
+        //seller confirms
+
+        vm.prank(escrowCon.seller);
+        escrow.confirmEscrow(id);
+
+        // buyer will not be able to confirm because deadline has reached
+        vm.warp(44 days);
+
+        vm.expectRevert();
+        vm.prank(escrowCon.buyer);
+        escrow.confirmEscrow(id);
     }
 
     function testRevertIfCallerisNotSellerorBuyer() public{
