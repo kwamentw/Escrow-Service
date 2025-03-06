@@ -174,7 +174,7 @@ contract Escrow{
     function refundEscrow(uint256 _id) external onlyArbitrator(msg.sender){
         require(escrows[_id].deadline < block.timestamp,"Pending duration not expired");
         require(escrows[_id].status != EscrowStatus.REFUNDED,"Escrow already refunded");
-        require(escrows[_id].sellerConfirm == false || escrows[_id].buyerConfirm == false, "Disagreement");
+        require(escrows[_id].sellerConfirm == false || escrows[_id].buyerConfirm == false, "Two parties Have Agreed! Funds need to be released");
 
         uint256 fee = escrows[_id].arbitratorFee;
 

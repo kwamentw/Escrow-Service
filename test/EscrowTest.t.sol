@@ -141,6 +141,25 @@ contract EscrowTest is Test{
     }
 
     //TODO: cannnot refund because the two parties have confirmed
+    function testRevert721RefundDueToAgreement() public{
+        uint256 id = createNftEscrow();
+
+        Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
+
+        vm.prank(firstNftEscrow.buyer);
+        escrow.confirmEscrow(id);
+
+        vm.prank(firstNftEscrow.seller);
+        escrow.confirmEscrow(id);
+
+        escrow.addArbitrator(address(0xccc));
+
+        vm.warp(32 days);
+
+        vm.expectRevert();
+        vm.prank(address(0xccc));
+        escrow.refundEscrow(id);
+    }
     //TODO: cannot because deadline not reached parties stil have sometime to catch an agreement
 
     function testCanRelease721() public{
