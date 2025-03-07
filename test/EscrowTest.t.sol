@@ -161,6 +161,23 @@ contract EscrowTest is Test{
         escrow.refundEscrow(id);
     }
     //TODO: cannot because deadline not reached parties stil have sometime to catch an agreement
+    function testRevertRefund721DueToDeadline() public{
+        uint256 id = createNftEscrow();
+
+        Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
+
+        // simulate that only one party has agreed and the arbitrator is trying to refund
+        vm.prank(firstNftEscrow.seller);
+        escrow.confirmEscrow(id);
+
+        escrow.addArbitrator(address(0xccc));
+        
+        //There will be a revert because the agreed time for the escrow to run has not been reached
+
+        vm.expectRevert();
+        vm.prank(address(0xccc));
+        escrow.refundEscrow(id);
+    }
 
     function testCanRelease721() public{
         uint256 id = createNftEscrow();
