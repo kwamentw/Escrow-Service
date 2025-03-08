@@ -171,7 +171,7 @@ contract EscrowTest is Test{
         escrow.confirmEscrow(id);
 
         escrow.addArbitrator(address(0xccc));
-        
+
         //There will be a revert because the agreed time for the escrow to run has not been reached
 
         vm.expectRevert();
@@ -202,7 +202,7 @@ contract EscrowTest is Test{
     }
 
     //TODO: cannot release because the two parites disagreed
-    function testRevertWhenReleasingDueToDisagreement() public{
+    function testRevertWhenReleasing721DueToDisagreement() public{
         uint256 id = createNftEscrow();
 
         Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
@@ -217,6 +217,20 @@ contract EscrowTest is Test{
         vm.expectRevert();
         vm.prank(address(0xCCC));
         escrow.releaseEscrow(id);
+    }
+
+    /**
+     * Random addresses should not be able to send Nfts to this contract
+     * it should revert with [FAIL: revert: Nft can only be sent by the depositor]
+     * Anytime senders are not trying to use the protocol
+     */
+    function testNftDepositRevert() public{
+        mocknft.mint(address(0xddd), 222);
+
+        vm.prank(address(0xddd));
+        IERC721(mocknft).approve(address(this), 222);
+
+        IERC721(mocknft).safeTransferFrom(address(0xddd), address(escrow), 222);
     }
 
     function test_canCreateNativeEscrow() public {

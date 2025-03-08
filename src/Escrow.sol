@@ -244,6 +244,13 @@ contract Escrow{
         emit EscrowReleased(idd,amount);
     }
 
+    function releaseLockedTkns(address token) external onlyOwner{
+        if(IERC20(token).balanceOf(address(this)) > 0){
+            uint256 amount = IERC20(token).balanceOf(address(this));
+            IERC20(token).safeTransfer(owner, amount);
+        }
+    }
+
     function getEscrowId(address user) external view returns(uint256) {
         return userToActivEscrow[user];
     }
@@ -257,9 +264,13 @@ contract Escrow{
     }
 
     function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata data) external view returns(bytes4){
-        require(userToActivEscrow[operator] != 0, "Nft can only be sent by the seller");
+        require(userToActivEscrow[operator] != 0, "Nft can only be sent by the depositor");
         uint256 escrowId = userToActivEscrow[operator];
         require(escrows[escrowId].tokenId == tokenId, " User trying to send a different token");
         return this.onERC721Received.selector;
+    }
+
+    receive() external payable{
+        revert("Please create an Escrow: That's the only way you can deposit into this contract");
     }
 }
