@@ -55,8 +55,8 @@ contract EscrowTest is Test{
         firstEscrow.buyerConfirm = false;
         firstEscrow.sellerConfirm = false;
         firstEscrow.status = Escrow.EscrowStatus.NONE;
-        firstEscrow.nftAddress = address(mocknft);
-        firstEscrow.tokenId = 2223;
+        firstEscrow.nftAddress = address(0);
+        firstEscrow.tokenId = 0;
 
         deal(address(token), address(0xabc), 10000e18);
 
@@ -103,6 +103,50 @@ contract EscrowTest is Test{
         assertNotEq(firstERC20Escrow.seller, address(0));
         assertEq(firstERC20Escrow.amount, 50e18);
         assertEq(IERC20(token).balanceOf(address(escrow)), 50e18 + firstERC20Escrow.arbitratorFee );
+    }
+    //erc20refund
+    function testRefundE20Escrow() public{
+        uint256 id = createERC20Escrow();
+        Escrow.EscrowInfo memory firstERC20Escrow = escrow.getUserEscrow(id);
+
+        vm.prank(firstERC20Escrow.seller);
+        escrow.confirmEscrow(id);
+
+        escrow.addArbitrator(address(0xFFF));
+
+        uint256 balBefore = IERC20(token).balanceOf(address(0xabc));
+        
+        vm.prank(address(0xFFF));
+        vm.warp(40 days);
+        escrow.refundEscrow(id);
+
+        uint256 balAfter = IERC20(token).balanceOf(address(0xabc));
+
+        assertGt(balAfter, balBefore);
+        assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.REFUNDED);
+    }
+    //erc20release
+    function testReleaseE20Escrow() public{
+        uint256 id = createERC20Escrow();
+        Escrow.EscrowInfo memory firstERC20Escrow = escrow.getUserEscrow(id);
+
+        vm.prank(firstERC20Escrow.seller);
+        escrow.confirmEscrow(id);
+
+        vm.prank(firstERC20Escrow.buyer);
+        escrow.confirmEscrow(id);
+
+        uint256 balBefore = IERC20(token).balanceOf(firstERC20Escrow.seller);
+
+        escrow.addArbitrator(address(0xFFF));
+
+        vm.prank(address(0xFFF));
+        escrow.releaseEscrow(id);
+
+        uint256 balAfter = IERC20(token).balanceOf(firstERC20Escrow.seller);
+
+        assertGt(balAfter, balBefore);
+        assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.SETTLED);
     }
 
     function testCanCreate721Escrow() public{

@@ -97,9 +97,9 @@ contract Escrow{
 
         if(newEscrow.asset == AssetType.ERC20){
             newEscrow.arbitratorFee = arbitratorFee;
-            if(token.balanceOf(newEscrow.seller ) < newEscrow.amount + arbitratorFee){ revert("Not Enough Funds"); }
-            token.safeTransferFrom(newEscrow.buyer,address(this), newEscrow.amount);
-            token.safeTransferFrom(newEscrow.buyer , address(this), arbitratorFee);
+            if(token.balanceOf(newEscrow.buyer) < newEscrow.amount + arbitratorFee){ revert("Not Enough Funds"); }
+            token.safeTransferFrom(newEscrow.buyer, address(this), newEscrow.amount);
+            token.safeTransferFrom(newEscrow.buyer, address(this), arbitratorFee);
             
             escrows[id] = newEscrow;
             
@@ -172,7 +172,7 @@ contract Escrow{
     }
 
     function refundEscrow(uint256 _id) external onlyArbitrator(msg.sender){
-        require(escrows[_id].deadline < block.timestamp,"Pending duration not expired");
+        require(block.timestamp > escrows[_id].deadline,"Pending duration not expired");
         require(escrows[_id].status != EscrowStatus.REFUNDED,"Escrow already refunded");
         require(escrows[_id].sellerConfirm == false || escrows[_id].buyerConfirm == false, "Two parties Have Agreed! Funds need to be released");
 
@@ -182,8 +182,8 @@ contract Escrow{
             if(token.balanceOf(address(this))<escrows[_id].amount + fee){
                 revert("Insufficient balance");
             }
-            token.safeTransferFrom(address(this), msg.sender, fee);
-            token.safeTransferFrom(address(this), escrows[_id].buyer, escrows[_id].amount);
+            token.safeTransfer(msg.sender, fee);
+            token.safeTransfer(escrows[_id].buyer, escrows[_id].amount);
 
         }else if(escrows[_id].asset == AssetType.ERC721){
             address nftContract = escrows[_id].nftAddress;
