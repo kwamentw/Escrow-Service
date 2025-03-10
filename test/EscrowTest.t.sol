@@ -125,6 +125,35 @@ contract EscrowTest is Test{
         assertGt(balAfter, balBefore);
         assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.REFUNDED);
     }
+    //cannot refund agreement
+    function testRevertRefundDueToAgreement() public{
+        uint256 id = createERC20Escrow();
+        Escrow.EscrowInfo memory firstERC20Escrow = escrow.getUserEscrow(id);
+
+        vm.prank(firstERC20Escrow.seller);
+        escrow.confirmEscrow(id);
+
+        vm.prank(firstERC20Escrow.buyer);
+        escrow.confirmEscrow(id);
+
+        escrow.addArbitrator(address(0xFFF));
+        
+        vm.warp(block.timestamp + 40 days);
+        // vm.roll(100);
+        vm.prank(address(0xFFF));
+        escrow.refundEscrow(id); /// should revert cos both parties have agreed
+    }
+    //cannot refund deadline
+    function testRevertRefundDueToDeadline() public{
+        uint256 id = createERC20Escrow();
+        Escrow.EscrowInfo memory firstERC20Escrow = escrow.getUserEscrow(id);
+
+        escrow.addArbitrator(address(0xFFF));
+
+        vm.prank(address(0xFFF));
+        escrow.refundEscrow(id); //escrow will revert because there is deadline has not reached
+    }
+
     //erc20release
     function testReleaseE20Escrow() public{
         uint256 id = createERC20Escrow();
@@ -148,6 +177,8 @@ contract EscrowTest is Test{
         assertGt(balAfter, balBefore);
         assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.SETTLED);
     }
+
+    //cannot release
 
     function testCanCreate721Escrow() public{
         uint256 id = createNftEscrow();
