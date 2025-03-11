@@ -244,10 +244,10 @@ contract Escrow{
         emit EscrowReleased(idd,amount);
     }
 
-    function releaseLockedTkns(address token) external onlyOwner{
-        if(IERC20(token).balanceOf(address(this)) > 0){
-            uint256 amount = IERC20(token).balanceOf(address(this));
-            IERC20(token).safeTransfer(owner, amount);
+    function releaseLockedTkns(address _token) external onlyOwner{
+        if(IERC20(_token).balanceOf(address(this)) > 0){
+            uint256 amount = IERC20(_token).balanceOf(address(this));
+            IERC20(_token).safeTransfer(owner, amount);
         }
     }
 

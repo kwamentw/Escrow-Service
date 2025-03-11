@@ -179,6 +179,23 @@ contract EscrowTest is Test{
     }
 
     //cannot release
+    function testRevertReleaseE20() public{
+        uint256 id = createERC20Escrow();
+        Escrow.EscrowInfo memory firstERC20Escrow = escrow.getUserEscrow(id);
+
+        // only one party confirms
+        vm.prank(firstERC20Escrow.seller);
+        escrow.confirmEscrow(id);
+
+        // adding arbitrator that will call the release
+        escrow.addArbitrator(address(0xFFF));
+
+        // arbitrator was lured to release funds
+        vm.prank(address(address(0xFFF)));
+        // But this will regret because all parties have not confirmed
+        vm.expectRevert();
+        escrow.releaseEscrow(id);
+    }
 
     function testCanCreate721Escrow() public{
         uint256 id = createNftEscrow();
