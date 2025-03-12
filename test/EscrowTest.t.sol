@@ -93,6 +93,30 @@ contract EscrowTest is Test{
 
     ///////////////////// TEST FUNCTIONS //////////////////////////
 
+    function testCanCreateDiffTypOfEscrowAtOnce() public{
+        uint256 id = createNativeEscrow();
+        uint256 id2 = createERC20Escrow();
+        uint256 id3 = create721Escrow();
+
+        Escrow.EscrowInfo memory nativeEscrow = escrow.getUserEscrow(id);
+        Escrow.EscrowInfo memory erc20Escrow = escrow.getUserEscrow(id2);
+        Escrow.EscrowInfo memory nftEscrow = escrow.getUserEscrow(id3);
+
+        assertNotEq(nativeEscrow.seller, address(0));
+        assertNotEq(erc20Escrow.seller, address(0));
+        assertNotEq(nftEscrow.seller, address(0));
+
+        assertGt(nativeEscrow.amount, 0);
+        assertGt(erc20Escrow.amount, 0);
+        assertEq(nftEscrow.amount, 0);
+
+        assertNotEq(nftEscrow.nftAddress, address(0));
+
+        assertGt(nativeEscrow.deadline, 0);
+        assertGt(erc20Escrow.deadline, 0);
+        assertGt(nftEscrow.deadline,0);
+    }
+
     function testCanCreateE20Escrow() public{
         uint256 id = createERC20Escrow();
 
