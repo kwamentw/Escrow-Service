@@ -8,6 +8,9 @@ import {console2} from "forge-std/console2.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
+/**
+ * A TEST SUIT FOR ESCROW.SOL
+ */
 contract EscrowTest is Test{
     Escrow escrow;
     MockNFT mocknft;
@@ -96,7 +99,7 @@ contract EscrowTest is Test{
     function testCanCreateDiffTypOfEscrowAtOnce() public{
         uint256 id = createNativeEscrow();
         uint256 id2 = createERC20Escrow();
-        uint256 id3 = create721Escrow();
+        uint256 id3 = createNftEscrow();
 
         Escrow.EscrowInfo memory nativeEscrow = escrow.getUserEscrow(id);
         Escrow.EscrowInfo memory erc20Escrow = escrow.getUserEscrow(id2);
@@ -115,6 +118,12 @@ contract EscrowTest is Test{
         assertGt(nativeEscrow.deadline, 0);
         assertGt(erc20Escrow.deadline, 0);
         assertGt(nftEscrow.deadline,0);
+    }
+
+    function testCanCreateMultipleNativeEscrows() public {
+        uint256 id = createNativeEscrow();
+        uint256 id2 = createNativeEscrow();
+        uint256 id3 = createNativeEscrow();
     }
 
     function testCanCreateE20Escrow() public{
