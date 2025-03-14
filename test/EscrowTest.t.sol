@@ -126,6 +126,17 @@ contract EscrowTest is Test{
         uint256 id3 = createNativeEscrow();
     }
 
+    function testCanCreateMultiE20Escrws() public{
+        uint256 id2 = createERC20Escrow();
+        uint256 id4 = createERC20Escrow();
+        uint256 id8 = createERC20Escrow();
+    }
+    function testCanCreateMultiNftEscrws() public {
+        uint256 id3 = createNftEscrow();
+        uint256 id8 = createNftEscrow();
+        uint256 id4 = createNftEscrow();
+    }
+
     function testCanCreateE20Escrow() public{
         uint256 id = createERC20Escrow();
 
