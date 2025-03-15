@@ -6,12 +6,16 @@ import {Escrow} from "../src/Escrow.sol";
 import {MockNFT} from "./MockNft.sol";
 import {console2} from "forge-std/console2.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /**
  * A TEST SUIT FOR ESCROW.SOL
  */
 contract EscrowTest is Test{
+
+    using SafeERC20 for IERC20;
+
     Escrow escrow;
     MockNFT mocknft;
     address token = 0x6B175474E89094C44Da98b954EedeAC495271d0F; //usdc
@@ -252,8 +256,6 @@ contract EscrowTest is Test{
 
     }
 
-    //TODO: Test to see whether many escrows can be created at once
-
     function testCanRefund721() public{
         uint256 id = createNftEscrow();
 
@@ -277,7 +279,7 @@ contract EscrowTest is Test{
     }
 
     //TODO: cannnot refund because the two parties have confirmed
-    function testRevert721RefundDueToAgreement() public{
+    function testRevert721RefundDueToConfirm() public{
         uint256 id = createNftEscrow();
 
         Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
@@ -296,7 +298,7 @@ contract EscrowTest is Test{
         vm.prank(address(0xccc));
         escrow.refundEscrow(id);
     }
-    //TODO: cannot because deadline not reached parties stil have sometime to catch an agreement
+
     function testRevertRefund721DueToDeadline() public{
         uint256 id = createNftEscrow();
 
@@ -337,7 +339,6 @@ contract EscrowTest is Test{
         assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.SETTLED);
     }
 
-    //TODO: cannot release because the two parites disagreed
     function testRevertWhenReleasing721DueToDisagreement() public{
         uint256 id = createNftEscrow();
 
@@ -401,7 +402,6 @@ contract EscrowTest is Test{
         assertTrue(escrow.getUserEscrow(id).buyerConfirm);
     }
 
-    //TODO: cannot confirm because deadline has reached
     function testRevertConfirmationDeadlineReached() public{
         uint256 id = createNativeEscrow();
 
@@ -559,5 +559,24 @@ contract EscrowTest is Test{
         vm.expectRevert();
         vm.prank(address(0xfff));
         escrow.releaseEscrow(id);
+    }
+
+    function testReleaseLockedTkns() public{
+        address unacceptedToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+        deal(unacceptedToken, address(0xDDD), 10e18);
+
+        vm.prank(address(0xDDD));
+        IERC20(unacceptedToken).approve(address(this), 10e18);
+
+        IERC20(unacceptedToken).safeTransferFrom(address(0xDDD), address(escrow), 10e18);
+
+        assertEq(IERC20(unacceptedToken).balanceOf(address(escrow)), 10e18);
+
+        vm.prank(address(0xDDD));
+        IERC20(unacceptedToken).approve(address(escrow), 10e18);
+
+        escrow.releaseLockedTkns(unacceptedToken);
+
+        assertEq(IERC20(unacceptedToken).balanceOf(address(this)),10e18);
     }
 }
