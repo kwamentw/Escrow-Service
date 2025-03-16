@@ -85,12 +85,12 @@ contract Escrow{
     // TODO: Change buyer and seller to depositor and receiverr to make it less confusing
 
     function createEscrow(EscrowInfo memory newEscrow) external  payable returns(uint256){
-        require(escrows[id].buyer == address(0));
-        require(newEscrow.buyer != address(0));
-        require(newEscrow.seller != address(0));
-        require(newEscrow.amount > 0);
-        require(newEscrow.deadline > block.timestamp);
-        require(newEscrow.status == EscrowStatus.NONE);
+        require(escrows[id].buyer == address(0), "buyer not set");
+        require(newEscrow.buyer != address(0), "invalid buyer");
+        require(newEscrow.seller != address(0), "invalid seller");
+        require(newEscrow.amount > 0,"invalid amount");
+        require(newEscrow.deadline > block.timestamp, "invalid deadline");
+        require(newEscrow.status == EscrowStatus.NONE, "not a new escrow");
         
         userToActivEscrow[msg.sender] = id;
         uint256 arbitratorFee = arbitratorFeeBPS * newEscrow.amount / BASIS_POINT;
@@ -106,7 +106,7 @@ contract Escrow{
         }
 
         if(newEscrow.asset == AssetType.Native){
-            require(msg.value == newEscrow.amount + arbitratorFee,"heyy");
+            require(msg.value == newEscrow.amount + arbitratorFee,"Incorrect amount");
             newEscrow.arbitratorFee = arbitratorFee;
             escrows[id] = newEscrow;
         }
@@ -122,11 +122,11 @@ contract Escrow{
 
  
     function create721Escrow(EscrowInfo memory newEscrow) external  payable returns(uint256){
-        require(escrows[id].buyer == address(0),"f");
-        require(newEscrow.buyer != address(0),"e");
-        require(newEscrow.seller != address(0),"d");
-        require(newEscrow.deadline > block.timestamp,"b");
-        require(newEscrow.status == EscrowStatus.NONE,"a");
+        require(escrows[id].buyer == address(0),"empty 721escrow");
+        require(newEscrow.buyer != address(0),"invalid 721 buyer");
+        require(newEscrow.seller != address(0),"invalid 721 seller");
+        require(newEscrow.deadline > block.timestamp,"invalid deadline");
+        require(newEscrow.status == EscrowStatus.NONE,"not a fresh escrow");
         
         userToActivEscrow[msg.sender] = id;
 
@@ -136,8 +136,8 @@ contract Escrow{
         address nftcontract = newEscrow.nftAddress;
         uint256 tokenID = newEscrow.tokenId;
         require(msg.value == arbitratorFeeForNFT, "arbitrator Fees not paid");
-        require(newEscrow.nftAddress != address(0),"yy");
-        require(newEscrow.amount == 0, "no need to deposit tokens");
+        require(newEscrow.nftAddress != address(0),"incorrect nft");
+        require(newEscrow.amount == 0, "MF its an NFT escrow");
         require(IERC721(nftcontract).ownerOf(tokenID)==newEscrow.buyer,"Trying to sell what is not yours");
         IERC721(nftcontract).transferFrom(newEscrow.buyer,address(this),tokenID);
         newEscrow.arbitratorFee = arbitratorFeeForNFT;
@@ -221,7 +221,7 @@ contract Escrow{
             escrows[idd].amount = 0;
             token.safeTransfer(receiver, amount);
         }else if(escrows[idd].asset == AssetType.Native){
-            if(amount<=address(this).balance){
+            if(amount <= address(this).balance){
                 (bool ok, ) = payable(receiver).call{value: amount}("");
                 require(ok);
             }else{

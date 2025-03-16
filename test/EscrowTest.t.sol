@@ -562,21 +562,32 @@ contract EscrowTest is Test{
     }
 
     function testReleaseLockedTkns() public{
-        address unacceptedToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-        deal(unacceptedToken, address(0xDDD), 10e18);
+        address unAcceptedToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+        deal(unAcceptedToken, address(0xDDD), 10e18);
 
         vm.prank(address(0xDDD));
-        IERC20(unacceptedToken).approve(address(this), 10e18);
+        IERC20(unAcceptedToken).approve(address(this), 10e18);
 
-        IERC20(unacceptedToken).safeTransferFrom(address(0xDDD), address(escrow), 10e18);
+        IERC20(unAcceptedToken).safeTransferFrom(address(0xDDD), address(escrow), 10e18);
 
-        assertEq(IERC20(unacceptedToken).balanceOf(address(escrow)), 10e18);
+        assertEq(IERC20(unAcceptedToken).balanceOf(address(escrow)), 10e18);
 
         vm.prank(address(0xDDD));
-        IERC20(unacceptedToken).approve(address(escrow), 10e18);
+        IERC20(unAcceptedToken).approve(address(escrow), 10e18);
 
-        escrow.releaseLockedTkns(unacceptedToken);
+        escrow.releaseLockedTkns(unAcceptedToken);
 
-        assertEq(IERC20(unacceptedToken).balanceOf(address(this)),10e18);
+        assertEq(IERC20(unAcceptedToken).balanceOf(address(this)),10e18);
+    }
+
+    function testRevertReleaseLockedTkns() public{
+        address unAcceptedToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+        deal(unAcceptedToken, address(0xDDD), 10e18);
+
+        //SHOULD EXPECT A NOT AUTHORISED REVERT
+        vm.expectRevert();
+        
+        vm.prank(address(0xFFF));
+        escrow.releaseLockedTkns(unAcceptedToken);
     }
 }
