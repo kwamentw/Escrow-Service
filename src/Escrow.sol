@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+// imports
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -15,19 +16,27 @@ contract Escrow{
     using SafeERC20 for IERC20;
 
     // events
+
+    //Emits when a new arbitrator is added
     event ArbitratorAdded(address newArb);
+    //Emits when a new escrow is created
     event EscrowCreated(uint256 id);
+    //Emits when an escrow is refunded
     event EscrowRefunded(uint256 id);
+    // Emits when a escrow is released to reciever
     event EscrowReleased(uint256 id, uint256 amount);
 
     // enum
+
+    //Type of asset deposited
     enum AssetType{ERC20, ERC721, Native}
+    // Current status os escrow
     enum EscrowStatus{NONE, SETTLED, REFUNDED}
 
     uint256 id; // escrow starting ID
 
     /**
-     * Details / configuration information of the escrow.
+     * Escrow Details / configuration information of the escrow.
      */
     struct EscrowInfo {
         address buyer;
@@ -44,25 +53,24 @@ contract Escrow{
         uint256 tokenId;
     }
 
-    /**
-     * @dev Nft escrowed information
-     */
-    // struct NftInfo{
-    //     address nftAddress;
-    //     uint256 tokenId;
-    // }
-
     // mappings
-    mapping (address user => uint256 id) userToActivEscrow;
+
+    // address of user that deposited => the id of the escrow deposited in
+    mapping (address user => uint256 id) userToActivEscrow; 
+    // id of escrow => full details of escrow
     mapping (uint256 id => EscrowInfo escrow) escrows;
+    // address of arbitrator => arbitrator status
     mapping (address user => bool status) arbitrators;
 
     // storage vars
+
     uint256 immutable BASIS_POINT = 1e4;
     address owner; //owner of contract
     IERC20 token; //I think we'll fuck with usdc for now 
     uint32 arbitratorFeeBPS; //it will 200BPS of every deposit
     uint256 arbitratorFeeForNFT; // fee charged in native currency for every deposit
+
+
 
     constructor(address _owner, address _token){
         owner = _owner;
@@ -72,18 +80,33 @@ contract Escrow{
         id = 1;
     }
 
+
+
+    /**
+     * Only allows arbitrators to call functions with this modifier
+     */
     modifier onlyArbitrator(address sender) {
         require(arbitrators[sender]== true,"Not arbitrator");
         _;
     }
 
+    /**
+     * Only allows owner to call functions with this modifier
+     */
     modifier onlyOwner {
         require(msg.sender == owner,"Not Authorised");
         _;
     }
 
-    // TODO: Change buyer and seller to depositor and receiverr to make it less confusing
+    
 
+    //@audit TODO: I am thinking of changing buyer to depositor and seller to receiver
+
+    /**
+     * Creates a new erc20 escrow or Native token escrow for buyer/depositor
+     * @param newEscrow escrow to be created
+     * @return id the id of the escrow created
+     */
     function createEscrow(EscrowInfo memory newEscrow) external  payable returns(uint256){
         require(escrows[id].buyer == address(0), "buyer not set");
         require(newEscrow.buyer != address(0), "invalid buyer");
@@ -91,6 +114,7 @@ contract Escrow{
         require(newEscrow.amount > 0,"invalid amount");
         require(newEscrow.deadline > block.timestamp, "invalid deadline");
         require(newEscrow.status == EscrowStatus.NONE, "not a new escrow");
+        require(msg.sender == escrows[id].buyer);
         
         userToActivEscrow[msg.sender] = id;
         uint256 arbitratorFee = arbitratorFeeBPS * newEscrow.amount / BASIS_POINT;
@@ -121,6 +145,11 @@ contract Escrow{
     }
 
  
+    /**
+     * Creates a new NFT escrow for buyer/depositor
+     * @param newEscrow new nft escrow to be cretaed
+     * @return id the id of the escrow created
+     */
     function create721Escrow(EscrowInfo memory newEscrow) external  payable returns(uint256){
         require(escrows[id].buyer == address(0),"empty 721escrow");
         require(newEscrow.buyer != address(0),"invalid 721 buyer");
@@ -155,6 +184,10 @@ contract Escrow{
         
     }
 
+    /**
+     * Called by escrow users to confirm release of escrow
+     * @param _id id of the escrow to confirm
+     */
     function confirmEscrow(uint256 _id) external {
         require(escrows[_id].deadline >= block.timestamp,"deadline");
         require(msg.sender == escrows[_id].seller || msg.sender == escrows[_id].buyer,"Cant call this function");
@@ -165,12 +198,22 @@ contract Escrow{
         }
     }
 
+    /**
+     * Adds a new arbitrator to the protocol
+     * only owner can add
+     * @param newArbitrator address of the new arbitrator
+     */
     function addArbitrator(address newArbitrator) external onlyOwner {
         require(arbitrators[newArbitrator]== false, "already an arbitrator");
         arbitrators[newArbitrator] = true;
         emit ArbitratorAdded(newArbitrator);
     }
 
+    /**
+     * Refunds the amount/nft in the escrow back to the buyer/depositor
+     * This is regulated by the arbitrator
+     * @param _id Id of the escrow
+     */
     function refundEscrow(uint256 _id) external onlyArbitrator(msg.sender){
         require(block.timestamp > escrows[_id].deadline,"Pending duration not expired");
         require(escrows[_id].status != EscrowStatus.REFUNDED,"Escrow already refunded");
@@ -207,6 +250,12 @@ contract Escrow{
         emit EscrowRefunded(_id);
     }
 
+    /**
+     * Releases the tokens in the escrow to seller/receiver
+     * This is regulated by the arbitrator 
+     * Can only be called when the seller & buy have confirmed
+     * @param idd id of the escrow
+     */
     function releaseEscrow(uint256 idd) external onlyArbitrator(msg.sender){
         // check whether buyer and seller has confirmed
         require(escrows[idd].sellerConfirm == true && escrows[idd].buyerConfirm == true, "Can't release escrow");
@@ -244,6 +293,11 @@ contract Escrow{
         emit EscrowReleased(idd,amount);
     }
 
+    /**
+     * Sends tokens that have mistakenly been sent to the contract back to the owner
+     * Any tokens aside the predefined tokens will be sent to owner
+     * @param _token address of locked token
+     */
     function releaseLockedTkns(address _token) external onlyOwner{
         if(IERC20(_token).balanceOf(address(this)) > 0){
             uint256 amount = IERC20(_token).balanceOf(address(this));
@@ -251,18 +305,37 @@ contract Escrow{
         }
     }
 
+    /**
+     * Gets escrow ID of user's escrow
+     * @param user address of escrow depositor
+     */
     function getEscrowId(address user) external view returns(uint256) {
         return userToActivEscrow[user];
     }
 
+    /**
+     * Gets full EscrowInfo of provided escrowId
+     * @param escrowId id of escrow
+     */
     function getUserEscrow(uint256 escrowId) external view returns(EscrowInfo memory){
         return escrows[escrowId];
     }
 
+    /**
+     * Gets status of arbitrator
+     * @param arb address of arbitrator
+     */
     function getArbitratorStatus(address arb) external view returns(bool){
         return arbitrators[arb];
     }
 
+    /**
+     * NFT interface for receiving nft the safe way
+     * @param operator depositor of escrow
+     * @param from address nft is from
+     * @param tokenId tokenid of the nft
+     * @param data extra data
+     */
     function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata data) external view returns(bytes4){
         require(userToActivEscrow[operator] != 0, "Nft can only be sent by the depositor");
         uint256 escrowId = userToActivEscrow[operator];
