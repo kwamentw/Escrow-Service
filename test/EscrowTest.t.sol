@@ -25,20 +25,22 @@ contract EscrowTest is Test{
         mocknft = new MockNFT();
     }
 
-    ////////////// CREATE FUNCTIONS ////////////////
+    /////////////////////////////////////////////////////////////////////////////////
+    ////////////////////// CREATE ESCROW HELPER FUNCTIONS ///////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////
 
     function createNativeEscrow() public payable returns(uint256 _id) {
         
         Escrow.EscrowInfo memory firstEscrow;
 
-        firstEscrow.buyer = address(0xabc);
-        firstEscrow.seller = address(0xbac);
+        firstEscrow.depositor = address(0xabc);
+        firstEscrow.receiver = address(0xbac);
         firstEscrow.asset = Escrow.AssetType.Native;
         firstEscrow.amount = 50e18;
         firstEscrow.deadline = block.timestamp + 30 days;
         firstEscrow.arbitratorFee = 1e18;
-        firstEscrow.buyerConfirm = false;
-        firstEscrow.sellerConfirm = false;
+        firstEscrow.depositorConfirm = false;
+        firstEscrow.receiverConfirm = false;
         firstEscrow.status = Escrow.EscrowStatus.NONE;
         firstEscrow.nftAddress = address(mocknft);
         firstEscrow.tokenId = 2223;
@@ -53,14 +55,14 @@ contract EscrowTest is Test{
         
         Escrow.EscrowInfo memory firstEscrow;
 
-        firstEscrow.buyer = address(0xabc);
-        firstEscrow.seller = address(0xbac);
+        firstEscrow.depositor = address(0xabc);
+        firstEscrow.receiver = address(0xbac);
         firstEscrow.asset = Escrow.AssetType.ERC20;
         firstEscrow.amount = 50e18;
         firstEscrow.deadline = block.timestamp + 30 days;
         firstEscrow.arbitratorFee = 1e18;
-        firstEscrow.buyerConfirm = false;
-        firstEscrow.sellerConfirm = false;
+        firstEscrow.depositorConfirm = false;
+        firstEscrow.receiverConfirm = false;
         firstEscrow.status = Escrow.EscrowStatus.NONE;
         firstEscrow.nftAddress = address(0);
         firstEscrow.tokenId = 0;
@@ -78,14 +80,14 @@ contract EscrowTest is Test{
         Escrow.EscrowInfo memory firstEscrow;
         mocknft.mint(address(0xabc),2223);
 
-        firstEscrow.buyer = address(0xabc);
-        firstEscrow.seller = address(0xbac);
+        firstEscrow.depositor = address(0xabc);
+        firstEscrow.receiver = address(0xbac);
         firstEscrow.asset = Escrow.AssetType.ERC721;
         firstEscrow.amount = 0;
         firstEscrow.deadline = block.timestamp + 30 days;
         firstEscrow.arbitratorFee = 0.001e18;
-        firstEscrow.buyerConfirm = false;
-        firstEscrow.sellerConfirm = false;
+        firstEscrow.depositorConfirm = false;
+        firstEscrow.receiverConfirm = false;
         firstEscrow.status = Escrow.EscrowStatus.NONE;
         firstEscrow.nftAddress = address(mocknft);
         firstEscrow.tokenId = 2223;
@@ -98,7 +100,9 @@ contract EscrowTest is Test{
         id = escrow.create721Escrow{value: 0.001e18}(firstEscrow);
     }
 
-    ///////////////////// TEST FUNCTIONS //////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
+    ////////////////////// CREATE ESCROW TEST FUNCTIONS ///////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
 
     function testCanCreateDiffTypOfEscrowAtOnce() public{
         uint256 id = createNativeEscrow();
@@ -109,9 +113,9 @@ contract EscrowTest is Test{
         Escrow.EscrowInfo memory erc20Escrow = escrow.getUserEscrow(id2);
         Escrow.EscrowInfo memory nftEscrow = escrow.getUserEscrow(id3);
 
-        assertNotEq(nativeEscrow.seller, address(0));
-        assertNotEq(erc20Escrow.seller, address(0));
-        assertNotEq(nftEscrow.seller, address(0));
+        assertNotEq(nativeEscrow.receiver, address(0));
+        assertNotEq(erc20Escrow.receiver, address(0));
+        assertNotEq(nftEscrow.receiver, address(0));
 
         assertGt(nativeEscrow.amount, 0);
         assertGt(erc20Escrow.amount, 0);
@@ -128,17 +132,23 @@ contract EscrowTest is Test{
         uint256 id = createNativeEscrow();
         uint256 id2 = createNativeEscrow();
         uint256 id3 = createNativeEscrow();
+
+        console2.log(id, id2, id3);
     }
 
     function testCanCreateMultiE20Escrws() public{
         uint256 id2 = createERC20Escrow();
         uint256 id4 = createERC20Escrow();
         uint256 id8 = createERC20Escrow();
+
+        console2.log(id2, id4, id8);
     }
     function testCanCreateMultiNftEscrws() public {
         uint256 id3 = createNftEscrow();
         uint256 id8 = createNftEscrow();
         uint256 id4 = createNftEscrow();
+
+        console2.log(id3, id4, id8);
     }
 
     function testCanCreateE20Escrow() public{
@@ -146,18 +156,45 @@ contract EscrowTest is Test{
 
         Escrow.EscrowInfo memory firstERC20Escrow = escrow.getUserEscrow(id);
 
-        assertEq(firstERC20Escrow.buyer, address(0xabc));
+        assertEq(firstERC20Escrow.depositor, address(0xabc));
         assertNotEq(firstERC20Escrow.deadline,0);
-        assertNotEq(firstERC20Escrow.seller, address(0));
+        assertNotEq(firstERC20Escrow.receiver, address(0));
         assertEq(firstERC20Escrow.amount, 50e18);
         assertEq(IERC20(token).balanceOf(address(escrow)), 50e18 + firstERC20Escrow.arbitratorFee );
     }
-    //erc20refund
+
+    function testCanCreate721Escrow() public{
+        uint256 id = createNftEscrow();
+
+        Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
+
+        assertEq(IERC721(mocknft).balanceOf(address(escrow)),1);
+        assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), address(escrow));
+        assertNotEq(firstNftEscrow.nftAddress, address(0));
+
+    }
+
+    function testCanCreateNativeEscrow() public {
+ 
+        uint256 id = createNativeEscrow();
+
+        Escrow.EscrowInfo memory firstNatEscrow = escrow.getUserEscrow(id);
+
+        assertEq(firstNatEscrow.depositor, address(0xabc));
+        assertNotEq(firstNatEscrow.deadline,0);
+        assertEq(firstNatEscrow.amount, 50e18);
+        //todo: should add a balance check 
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////// REFUND TEST FUNCTIONS ///////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+
     function testRefundE20Escrow() public{
         uint256 id = createERC20Escrow();
         Escrow.EscrowInfo memory firstERC20Escrow = escrow.getUserEscrow(id);
 
-        vm.prank(firstERC20Escrow.seller);
+        vm.prank(firstERC20Escrow.receiver);
         escrow.confirmEscrow(id);
 
         escrow.addArbitrator(address(0xFFF));
@@ -173,15 +210,16 @@ contract EscrowTest is Test{
         assertGt(balAfter, balBefore);
         assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.REFUNDED);
     }
-    //cannot refund agreement
+    
+
     function testRevertRefundDueToAgreement() public{
         uint256 id = createERC20Escrow();
         Escrow.EscrowInfo memory firstERC20Escrow = escrow.getUserEscrow(id);
 
-        vm.prank(firstERC20Escrow.seller);
+        vm.prank(firstERC20Escrow.receiver);
         escrow.confirmEscrow(id);
 
-        vm.prank(firstERC20Escrow.buyer);
+        vm.prank(firstERC20Escrow.depositor);
         escrow.confirmEscrow(id);
 
         escrow.addArbitrator(address(0xFFF));
@@ -191,69 +229,15 @@ contract EscrowTest is Test{
         vm.prank(address(0xFFF));
         escrow.refundEscrow(id); /// should revert cos both parties have agreed
     }
-    //cannot refund deadline
+    
+
     function testRevertRefundDueToDeadline() public{
         uint256 id = createERC20Escrow();
-        Escrow.EscrowInfo memory firstERC20Escrow = escrow.getUserEscrow(id);
 
         escrow.addArbitrator(address(0xFFF));
 
         vm.prank(address(0xFFF));
         escrow.refundEscrow(id); //escrow will revert because there is deadline has not reached
-    }
-
-    //erc20release
-    function testReleaseE20Escrow() public{
-        uint256 id = createERC20Escrow();
-        Escrow.EscrowInfo memory firstERC20Escrow = escrow.getUserEscrow(id);
-
-        vm.prank(firstERC20Escrow.seller);
-        escrow.confirmEscrow(id);
-
-        vm.prank(firstERC20Escrow.buyer);
-        escrow.confirmEscrow(id);
-
-        uint256 balBefore = IERC20(token).balanceOf(firstERC20Escrow.seller);
-
-        escrow.addArbitrator(address(0xFFF));
-
-        vm.prank(address(0xFFF));
-        escrow.releaseEscrow(id);
-
-        uint256 balAfter = IERC20(token).balanceOf(firstERC20Escrow.seller);
-
-        assertGt(balAfter, balBefore);
-        assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.SETTLED);
-    }
-
-    //cannot release
-    function testRevertReleaseE20() public{
-        uint256 id = createERC20Escrow();
-        Escrow.EscrowInfo memory firstERC20Escrow = escrow.getUserEscrow(id);
-
-        // only one party confirms
-        vm.prank(firstERC20Escrow.seller);
-        escrow.confirmEscrow(id);
-
-        // adding arbitrator that will call the release
-        escrow.addArbitrator(address(0xFFF));
-
-        // arbitrator was lured to release funds
-        vm.prank(address(address(0xFFF)));
-        // But this will regret because all parties have not confirmed
-        vm.expectRevert();
-        escrow.releaseEscrow(id);
-    }
-
-    function testCanCreate721Escrow() public{
-        uint256 id = createNftEscrow();
-
-        Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
-
-        assertEq(IERC721(mocknft).balanceOf(address(escrow)),1);
-        assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), address(escrow));
-        assertNotEq(firstNftEscrow.nftAddress, address(0));
-
     }
 
     function testCanRefund721() public{
@@ -265,7 +249,7 @@ contract EscrowTest is Test{
 
         // we have to make sure only one party confirms
 
-        vm.prank(firstNftEscrow.buyer);
+        vm.prank(firstNftEscrow.depositor);
         escrow.confirmEscrow(id);
 
         escrow.addArbitrator(address(0xfff));
@@ -274,20 +258,19 @@ contract EscrowTest is Test{
         vm.prank(address(0xfff));
         escrow.refundEscrow(id);
 
-        assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), firstNftEscrow.buyer);
+        assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), firstNftEscrow.depositor);
         assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.REFUNDED);
     }
 
-    //TODO: cannnot refund because the two parties have confirmed
     function testRevert721RefundDueToConfirm() public{
         uint256 id = createNftEscrow();
 
         Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
 
-        vm.prank(firstNftEscrow.buyer);
+        vm.prank(firstNftEscrow.depositor);
         escrow.confirmEscrow(id);
 
-        vm.prank(firstNftEscrow.seller);
+        vm.prank(firstNftEscrow.receiver);
         escrow.confirmEscrow(id);
 
         escrow.addArbitrator(address(0xccc));
@@ -305,7 +288,7 @@ contract EscrowTest is Test{
         Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
 
         // simulate that only one party has agreed and the arbitrator is trying to refund
-        vm.prank(firstNftEscrow.seller);
+        vm.prank(firstNftEscrow.receiver);
         escrow.confirmEscrow(id);
 
         escrow.addArbitrator(address(0xccc));
@@ -317,140 +300,6 @@ contract EscrowTest is Test{
         escrow.refundEscrow(id);
     }
 
-    function testCanRelease721() public{
-        uint256 id = createNftEscrow();
-
-        Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
-
-        assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), address(escrow));
-
-        vm.prank(firstNftEscrow.buyer);
-        escrow.confirmEscrow(id);
-
-        vm.prank(firstNftEscrow.seller);
-        escrow.confirmEscrow(id);
-
-        escrow.addArbitrator(address(0xccc));
-
-        vm.prank(address(0xccc));
-        escrow.releaseEscrow(id);
-
-        assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), firstNftEscrow.seller);
-        assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.SETTLED);
-    }
-
-    function testRevertWhenReleasing721DueToDisagreement() public{
-        uint256 id = createNftEscrow();
-
-        Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
-
-        // let's assume only the seller agrees 
-        vm.prank(firstNftEscrow.seller);
-        escrow.confirmEscrow(id);
-
-        //add arbitrator who will call the release
-        escrow.addArbitrator(address(0xCCC));
-
-        vm.expectRevert();
-        vm.prank(address(0xCCC));
-        escrow.releaseEscrow(id);
-    }
-
-    /**
-     * Random addresses should not be able to send Nfts to this contract
-     * it should revert with [FAIL: revert: Nft can only be sent by the depositor]
-     * Anytime senders are not trying to use the protocol
-     */
-    function testNftDepositRevert() public{
-        mocknft.mint(address(0xddd), 222);
-
-        vm.prank(address(0xddd));
-        IERC721(mocknft).approve(address(this), 222);
-
-        IERC721(mocknft).safeTransferFrom(address(0xddd), address(escrow), 222);
-    }
-
-    function test_canCreateNativeEscrow() public {
- 
-        uint256 id = createNativeEscrow();
-
-        Escrow.EscrowInfo memory firstNatEscrow = escrow.getUserEscrow(id);
-
-        assertEq(firstNatEscrow.buyer, address(0xabc));
-        assertNotEq(firstNatEscrow.deadline,0);
-        assertEq(firstNatEscrow.amount, 50e18);
-        //todo: should add a balance check
-
-        
-    }
-
-    function testConfirmEscrow() public{
-        uint256 id = createNativeEscrow();
-
-        Escrow.EscrowInfo memory esscrow = escrow.getUserEscrow(id);
-
-        address seller = esscrow.seller;
-        address buyer = esscrow.buyer;
-
-        vm.prank(seller);
-        escrow.confirmEscrow(id);
-
-        vm.prank(buyer);
-        escrow.confirmEscrow(id);
-
-        assertTrue(escrow.getUserEscrow(id).sellerConfirm);
-        assertTrue(escrow.getUserEscrow(id).buyerConfirm);
-    }
-
-    function testRevertConfirmationDeadlineReached() public{
-        uint256 id = createNativeEscrow();
-
-        Escrow.EscrowInfo memory escrowCon = escrow.getUserEscrow(id);
-
-        //seller confirms
-
-        vm.prank(escrowCon.seller);
-        escrow.confirmEscrow(id);
-
-        // buyer will not be able to confirm because deadline has reached
-        vm.warp(44 days);
-
-        vm.expectRevert();
-        vm.prank(escrowCon.buyer);
-        escrow.confirmEscrow(id);
-    }
-
-    function testRevertIfCallerisNotSellerorBuyer() public{
-        uint256 id = createNativeEscrow();
-        Escrow.EscrowInfo memory esscrow = escrow.getUserEscrow(id);
-
-        address seller = esscrow.seller;
-        address buyer = esscrow.buyer;
-        address sender = address(4444);
-
-        assertNotEq(sender,buyer);
-        assertNotEq(sender,seller);
-
-        vm.expectRevert();
-        vm.prank(sender);
-        escrow.confirmEscrow(id);
-
-    }
-
-    function testAddArbitrator() public{
-        address newArbitrator = address(0xabccc);
-        escrow.addArbitrator(newArbitrator);
-
-        assertTrue(escrow.getArbitratorStatus(newArbitrator));
-    }
-
-    function testRevertIfArbitratorAlreadyExists() public{
-        address arbOne = address(0xabccc);
-        escrow.addArbitrator(arbOne);
-
-        vm.expectRevert();
-        escrow.addArbitrator(arbOne);
-    }
 
     function testRefundEscrow() public{
         uint256 id = createNativeEscrow();
@@ -520,7 +369,91 @@ contract EscrowTest is Test{
 
     }
 
-    function testReleaseEcrow() public{
+    /////////////////////////////////////////////////////////////////////////
+    ////////////////////// RELEASE TEST FUNCTIONS ///////////////////////////
+    /////////////////////////////////////////////////////////////////////////
+    
+    function testReleaseE20Escrow() public{
+        uint256 id = createERC20Escrow();
+        Escrow.EscrowInfo memory firstERC20Escrow = escrow.getUserEscrow(id);
+
+        vm.prank(firstERC20Escrow.receiver);
+        escrow.confirmEscrow(id);
+
+        vm.prank(firstERC20Escrow.depositor);
+        escrow.confirmEscrow(id);
+
+        uint256 balBefore = IERC20(token).balanceOf(firstERC20Escrow.receiver);
+
+        escrow.addArbitrator(address(0xFFF));
+
+        vm.prank(address(0xFFF));
+        escrow.releaseEscrow(id);
+
+        uint256 balAfter = IERC20(token).balanceOf(firstERC20Escrow.receiver);
+
+        assertGt(balAfter, balBefore);
+        assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.SETTLED);
+    }
+
+    function testRevertReleaseE20() public{
+        uint256 id = createERC20Escrow();
+        Escrow.EscrowInfo memory firstERC20Escrow = escrow.getUserEscrow(id);
+
+        // only one party confirms
+        vm.prank(firstERC20Escrow.receiver);
+        escrow.confirmEscrow(id);
+
+        // adding arbitrator that will call the release
+        escrow.addArbitrator(address(0xFFF));
+
+        // arbitrator was lured to release funds
+        vm.prank(address(address(0xFFF)));
+        // But this will regret because all parties have not confirmed
+        vm.expectRevert();
+        escrow.releaseEscrow(id);
+    }
+
+    function testCanRelease721() public{
+        uint256 id = createNftEscrow();
+
+        Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
+
+        assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), address(escrow));
+
+        vm.prank(firstNftEscrow.depositor);
+        escrow.confirmEscrow(id);
+
+        vm.prank(firstNftEscrow.receiver);
+        escrow.confirmEscrow(id);
+
+        escrow.addArbitrator(address(0xccc));
+
+        vm.prank(address(0xccc));
+        escrow.releaseEscrow(id);
+
+        assertEq(IERC721(mocknft).ownerOf(firstNftEscrow.tokenId), firstNftEscrow.receiver);
+        assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.SETTLED);
+    }
+
+    function testRevertWhenReleasing721DueToDisagreement() public{
+        uint256 id = createNftEscrow();
+
+        Escrow.EscrowInfo memory firstNftEscrow = escrow.getUserEscrow(id);
+
+        // let's assume only the receiver agrees 
+        vm.prank(firstNftEscrow.receiver);
+        escrow.confirmEscrow(id);
+
+        //add arbitrator who will call the release
+        escrow.addArbitrator(address(0xCCC));
+
+        vm.expectRevert();
+        vm.prank(address(0xCCC));
+        escrow.releaseEscrow(id);
+    }
+
+    function testReleaseEscrow() public{
         uint256 id = createNativeEscrow();
         vm.warp(20 days);
 
@@ -561,24 +494,100 @@ contract EscrowTest is Test{
         escrow.releaseEscrow(id);
     }
 
-    function testReleaseLockedTkns() public{
-        address unAcceptedToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-        deal(unAcceptedToken, address(0xDDD), 10e18);
+    /////////////////////////////////////////////////////////////////////////
+    ////////////////////// CONFIRM TEST FUNCTIONS ///////////////////////////
+    /////////////////////////////////////////////////////////////////////////
 
-        vm.prank(address(0xDDD));
-        IERC20(unAcceptedToken).approve(address(this), 10e18);
+    function testConfirmEscrow() public{
+        uint256 id = createNativeEscrow();
 
-        IERC20(unAcceptedToken).safeTransferFrom(address(0xDDD), address(escrow), 10e18);
+        Escrow.EscrowInfo memory esscrow = escrow.getUserEscrow(id);
 
-        assertEq(IERC20(unAcceptedToken).balanceOf(address(escrow)), 10e18);
+        address receiver = esscrow.receiver;
+        address depositor = esscrow.depositor;
 
-        vm.prank(address(0xDDD));
-        IERC20(unAcceptedToken).approve(address(escrow), 10e18);
+        vm.prank(receiver);
+        escrow.confirmEscrow(id);
 
-        escrow.releaseLockedTkns(unAcceptedToken);
+        vm.prank(depositor);
+        escrow.confirmEscrow(id);
 
-        assertEq(IERC20(unAcceptedToken).balanceOf(address(this)),10e18);
+        assertTrue(escrow.getUserEscrow(id).receiverConfirm);
+        assertTrue(escrow.getUserEscrow(id).depositorConfirm);
     }
+
+    function testRevertConfirmationDeadlineReached() public{
+        uint256 id = createNativeEscrow();
+
+        Escrow.EscrowInfo memory escrowCon = escrow.getUserEscrow(id);
+
+        //receiver confirms
+
+        vm.prank(escrowCon.receiver);
+        escrow.confirmEscrow(id);
+
+        // depositor will not be able to confirm because deadline has reached
+        vm.warp(44 days);
+
+        vm.expectRevert();
+        vm.prank(escrowCon.depositor);
+        escrow.confirmEscrow(id);
+    }
+
+    function testRevertConfirmCallerisNotReceiverorDepositor() public{
+        uint256 id = createNativeEscrow();
+        Escrow.EscrowInfo memory esscrow = escrow.getUserEscrow(id);
+
+        address receiver = esscrow.receiver;
+        address depositor = esscrow.depositor;
+        address sender = address(4444);
+
+        assertNotEq(sender,depositor);
+        assertNotEq(sender,receiver);
+
+        vm.expectRevert();
+        vm.prank(sender);
+        escrow.confirmEscrow(id);
+
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    ////////////////////// ARBITRATOR TEST FUNCTIONS ///////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    function testAddArbitrator() public{
+        address newArbitrator = address(0xabccc);
+        escrow.addArbitrator(newArbitrator);
+
+        assertTrue(escrow.getArbitratorStatus(newArbitrator));
+    }
+
+    function testRevertIfArbitratorAlreadyExists() public{
+        address arbOne = address(0xabccc);
+        escrow.addArbitrator(arbOne);
+
+        vm.expectRevert();
+        escrow.addArbitrator(arbOne);
+    }
+
+    ///////////////////////////////////////////////////////////////////////
+    ////////////////////// OTHER TEST FUNCTIONS ///////////////////////////
+    ///////////////////////////////////////////////////////////////////////
+
+    /**
+     * Random addresses should not be able to send Nfts to this contract
+     * it should revert with [FAIL: revert: Nft can only be sent by the depositor]
+     * Anytime senders are not trying to use the protocol
+     */
+    function testNftDepositRevert() public{
+        mocknft.mint(address(0xddd), 222);
+
+        vm.prank(address(0xddd));
+        IERC721(mocknft).approve(address(this), 222);
+
+        IERC721(mocknft).safeTransferFrom(address(0xddd), address(escrow), 222);
+    }
+
 
     function testRevertReleaseLockedTkns() public{
         address unAcceptedToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
