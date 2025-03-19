@@ -48,7 +48,6 @@ contract Escrow{
         bool depositorConfirm;
         bool receiverConfirm;
         EscrowStatus status;
-        // NftInfo nftt;
         address nftAddress;
         uint256 tokenId;
     }
@@ -98,9 +97,6 @@ contract Escrow{
         _;
     }
 
-
-
-    //@audit TODO: I am thinking of changing depositor to depositor and receiver to receiver
 
     /**
      * Creates a new erc20 escrow or Native token escrow for depositor/depositor

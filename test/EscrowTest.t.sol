@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.26;
 
+///// imports
+
 import {Test} from "forge-std/Test.sol";
 import {Escrow} from "../src/Escrow.sol";
 import {MockNFT} from "./MockNft.sol";
@@ -16,9 +18,12 @@ contract EscrowTest is Test{
 
     using SafeERC20 for IERC20;
 
+    // Escrow contract
     Escrow escrow;
+    // NFT contract
     MockNFT mocknft;
-    address token = 0x6B175474E89094C44Da98b954EedeAC495271d0F; //usdc
+    // USDC - ERC20 used with this escrow
+    address token = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
 
     function setUp() public{
         escrow = new Escrow(address(this),token);
@@ -29,6 +34,9 @@ contract EscrowTest is Test{
     ////////////////////// CREATE ESCROW HELPER FUNCTIONS ///////////////////////////
     /////////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * Helper function to create eth escrow 
+     */
     function createNativeEscrow() public payable returns(uint256 _id) {
         
         Escrow.EscrowInfo memory firstEscrow;
@@ -51,6 +59,9 @@ contract EscrowTest is Test{
         _id = escrow.createEscrow{value: firstEscrow.amount + firstEscrow.arbitratorFee}(firstEscrow);
     }
 
+    /**
+     * Helper function to create ERC20 escrow 
+     */
     function createERC20Escrow() public payable returns(uint256 _id) {
         
         Escrow.EscrowInfo memory firstEscrow;
@@ -76,6 +87,9 @@ contract EscrowTest is Test{
         _id = escrow.createEscrow(firstEscrow);
     }
 
+    /**
+     * Helper function to create NFT escrow
+     */
     function createNftEscrow() public returns(uint256 id){
         Escrow.EscrowInfo memory firstEscrow;
         mocknft.mint(address(0xabc),2223);
