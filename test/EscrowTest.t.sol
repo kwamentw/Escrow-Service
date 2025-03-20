@@ -50,8 +50,8 @@ contract EscrowTest is Test{
         firstEscrow.depositorConfirm = false;
         firstEscrow.receiverConfirm = false;
         firstEscrow.status = Escrow.EscrowStatus.NONE;
-        firstEscrow.nftAddress = address(mocknft);
-        firstEscrow.tokenId = 2223;
+        firstEscrow.nftAddress = address(0);
+        firstEscrow.tokenId = 0;
 
         deal(address(0xabc), firstEscrow.amount + firstEscrow.arbitratorFee);
 
@@ -612,5 +612,36 @@ contract EscrowTest is Test{
         
         vm.prank(address(0xFFF));
         escrow.releaseLockedTkns(unAcceptedToken);
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    //////////////////////     FUZZING TEST      ///////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+
+    function testFuzzCreateNativeEscrow(uint256 amount) public payable returns(uint256 _id) {
+        // vm.assume(amount <= type(uint128).max);
+
+        amount = bound(amount, 1, type(uint128).max);
+        
+        Escrow.EscrowInfo memory firstEscrow;
+
+        uint256 arbitratorFee = 200 * amount / 1e4;
+
+        firstEscrow.depositor = address(0xabc);
+        firstEscrow.receiver = address(0xbac);
+        firstEscrow.asset = Escrow.AssetType.Native;
+        firstEscrow.amount = amount;
+        firstEscrow.deadline = block.timestamp + 30 days;
+        firstEscrow.arbitratorFee = arbitratorFee;
+        firstEscrow.depositorConfirm = false;
+        firstEscrow.receiverConfirm = false;
+        firstEscrow.status = Escrow.EscrowStatus.NONE;
+        firstEscrow.nftAddress = address(0);
+        firstEscrow.tokenId = 0;
+
+        deal(address(0xabc), amount + arbitratorFee);
+
+        vm.prank(address(0xabc));
+        _id = escrow.createEscrow{value: amount + arbitratorFee}(firstEscrow);
     }
 }

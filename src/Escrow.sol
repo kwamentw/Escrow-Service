@@ -110,7 +110,7 @@ contract Escrow{
         require(newEscrow.amount > 0,"invalid amount");
         require(newEscrow.deadline > block.timestamp, "invalid deadline");
         require(newEscrow.status == EscrowStatus.NONE, "not a new escrow");
-        require(msg.sender == escrows[id].depositor);
+        require(msg.sender == newEscrow.depositor,"not depositor");
         
         userToActivEscrow[msg.sender] = id;
         uint256 arbitratorFee = arbitratorFeeBPS * newEscrow.amount / BASIS_POINT;
