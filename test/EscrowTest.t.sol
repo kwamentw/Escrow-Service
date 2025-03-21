@@ -618,7 +618,7 @@ contract EscrowTest is Test{
     //////////////////////     FUZZING TEST      ///////////////////////////
     ////////////////////////////////////////////////////////////////////////
 
-    function testFuzzCreateNativeEscrow(uint256 amount) public payable returns(uint256 _id) {
+    function testFuzzCreateNativeEscrow(uint256 amount) public {
         // vm.assume(amount <= type(uint128).max);
 
         amount = bound(amount, 1, type(uint128).max);
@@ -642,6 +642,35 @@ contract EscrowTest is Test{
         deal(address(0xabc), amount + arbitratorFee);
 
         vm.prank(address(0xabc));
-        _id = escrow.createEscrow{value: amount + arbitratorFee}(firstEscrow);
+        uint256 _id = escrow.createEscrow{value: amount + arbitratorFee}(firstEscrow);
+    }
+
+    function testFuzzCreateE20Escrow(uint256 amount) public{
+
+        Escrow.EscrowInfo memory firstEscrow;
+
+        amount = bound(amount, 1, type(uint128).max);
+
+        uint256 arbitratorFee = 200 * amount / 1e4;
+
+        firstEscrow.depositor = address(0xabc);
+        firstEscrow.receiver = address(0xbac);
+        firstEscrow.asset = Escrow.AssetType.ERC20;
+        firstEscrow.amount = amount;
+        firstEscrow.deadline = block.timestamp + 30 days;
+        firstEscrow.arbitratorFee = arbitratorFee;
+        firstEscrow.depositorConfirm = false;
+        firstEscrow.receiverConfirm = false;
+        firstEscrow.status = Escrow.EscrowStatus.NONE;
+        firstEscrow.nftAddress = address(0);
+        firstEscrow.tokenId = 0;
+
+        deal(address(token), address(0xabc), amount + arbitratorFee);
+
+        vm.prank(address(0xabc));
+        IERC20(token).approve(address(escrow), type(uint256).max);
+
+        vm.prank(address(0xabc));
+        uint256 _id = escrow.createEscrow(firstEscrow);
     }
 }
