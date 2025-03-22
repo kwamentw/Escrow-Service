@@ -673,4 +673,28 @@ contract EscrowTest is Test{
         vm.prank(address(0xabc));
         uint256 _id = escrow.createEscrow(firstEscrow);
     }
+
+    function testFuzzCreateNFTEscrow(uint256 id) public {
+        Escrow.EscrowInfo memory firstEscrow;
+        mocknft.mint(address(0xabc),id);
+
+        firstEscrow.depositor = address(0xabc);
+        firstEscrow.receiver = address(0xbac);
+        firstEscrow.asset = Escrow.AssetType.ERC721;
+        firstEscrow.amount = 0;
+        firstEscrow.deadline = block.timestamp + 30 days;
+        firstEscrow.arbitratorFee = 0.001e18;
+        firstEscrow.depositorConfirm = false;
+        firstEscrow.receiverConfirm = false;
+        firstEscrow.status = Escrow.EscrowStatus.NONE;
+        firstEscrow.nftAddress = address(mocknft);
+        firstEscrow.tokenId = id;
+        deal(address(0xabc), 1004e18);
+
+        vm.prank(address(0xabc));
+        IERC721(mocknft).approve(address(escrow), id);
+
+        vm.prank(address(0xabc));
+        id = escrow.create721Escrow{value: 0.001e18}(firstEscrow);
+    }
 }
