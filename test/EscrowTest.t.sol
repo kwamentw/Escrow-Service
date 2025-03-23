@@ -367,6 +367,19 @@ contract EscrowTest is Test{
         escrow.refundEscrow(id);
     }
 
+    function testRevertRefundNotArbitrator() public{
+        uint256 id = createNativeEscrow();
+        vm.warp(3 days);
+
+        vm.prank(address(0xabc));
+        escrow.confirmEscrow(id);
+
+        vm.warp(33 days);
+
+        vm.expectRevert(); // expert to refund not arbitrator
+        escrow.refundEscrow(id);
+    }
+
     function testRevertAlreadyRefunded() public{
 
         uint256 id = createNativeEscrow();
