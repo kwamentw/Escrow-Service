@@ -254,6 +254,35 @@ contract EscrowTest is Test{
         escrow.refundEscrow(id); //escrow will revert because there is deadline has not reached
     }
 
+    function testRevertAlreadyRefundedE20() public{
+
+        uint256 id = createERC20Escrow();
+        vm.warp(32 days);
+
+        escrow.addArbitrator(address(0xfff));
+
+        vm.prank(address(0xfff));
+        escrow.refundEscrow(id);
+
+        vm.expectRevert(); // it will will revert wil "alreadyRefunded" hence test passing
+        vm.prank(address(0xfff));
+        escrow.refundEscrow(id);
+
+    }
+
+    function testRevertRefundE20NotArbitrator() public{
+        uint256 id = createERC20Escrow();
+        vm.warp(3 days);
+
+        vm.prank(address(0xabc));
+        escrow.confirmEscrow(id);
+
+        vm.warp(33 days);
+
+        vm.expectRevert(); // expert to refund not arbitrator
+        escrow.refundEscrow(id);
+    }
+
     function testCanRefund721() public{
         uint256 id = createNftEscrow();
 
