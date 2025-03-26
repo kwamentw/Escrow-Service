@@ -1,17 +1,27 @@
-## Foundry
+## Escrow Service
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+**An Escrow contract for NFTs, native tokens and stablecoin(USDC): This contract is used for payment purposes i.e if you a user creates an escrow with this contract, he might be buying the services of someone he does not trust and needs a system to act as a mediator of payment to prevent fraud.**
 
-Foundry consists of:
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+## How this contract works
 
-## Documentation
+The user has to create an escrow and deposit whatever token he will be paying out into the contract
+set the necessary parameters of the escrow like who the recevier is and others.
 
-https://book.getfoundry.sh/
+After this, if the user feels he is satisfied with the services of the receiver. He will have to confirm the release of tokens by calling the function, and if the receiver has also successfully rendered the service he has to call confirm to indicate he has done his part successfully.
+
+However, There could be problems like one of the parties involved in the escrow agreement not fulfilling their part of the agreement. In cases like this, we have arbitrators in the system that will look into the agreement and depict whether funds should be refunded or released.
+
+Arbitrators decisions cannot be questioned.
+
+In cases where the deadline for confirming agreement is reached and both parties have confirmed successfully, The arbitrator will release funds to the reciever and end the escrow.
+
+Assets this escrow can handle: NFTs, ERC20(USDC), native eth
+
+This is intended to be deployed on the Ethereum network. However L2s might follow later.
+
+## What problem does this protocol solve?
+This protocol solves the problem of trust when purchasing goods or services from unknown people.
 
 ## Usage
 
@@ -27,40 +37,3 @@ $ forge build
 $ forge test
 ```
 
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
