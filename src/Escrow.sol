@@ -337,6 +337,9 @@ contract Escrow{
         return this.onERC721Received.selector;
     }
 
+    /**
+     * reverts when ether is being sent to the contract directly
+     */
     receive() external payable{
         revert("Please create an Escrow: That's the only way you can deposit into this contract");
     }
