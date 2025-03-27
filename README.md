@@ -15,8 +15,6 @@
     * Transparency and Decentralization: Transactions are recorded on the blockchain, ensuring transparency.
 
 
-
-
 ## How this contract works
 
     The user has to create an escrow and deposit whatever token he will be paying out into the contract
@@ -33,6 +31,12 @@
     Assets this escrow can handle: NFTs, ERC20(USDC), native eth
 
     This is intended to be deployed on the Ethereum network. However L2s might follow later.
+
+## Key Actors
+    * Owner: owner of the protocol
+    * Arbitrtator: In charge of mediating escrows
+    * Depositor: Creator of escrow, that deposits assets into escrow
+    * Receiver: Receiver of assets escrowed
 
 ## What problem does this protocol solve?
     This protocol solves the problem of trust when purchasing goods or services from unknown people.
