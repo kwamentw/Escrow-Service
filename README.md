@@ -55,3 +55,9 @@ $ forge build
 $ forge test
 ```
 
+## License
+This project is licensed under the MIT License. 
+
+## Contribution
+Contributions are welcome!
+
