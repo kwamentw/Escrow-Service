@@ -30,7 +30,8 @@ contract Escrow{
 
     //Type of asset deposited
     enum AssetType{ERC20, ERC721, Native}
-    // Current status os escrow
+    
+    // Current status of escrow
     enum EscrowStatus{NONE, SETTLED, REFUNDED}
 
     uint256 id; // escrow starting ID
@@ -39,17 +40,17 @@ contract Escrow{
      * Escrow Details / configuration information of the escrow.
      */
     struct EscrowInfo {
-        address depositor;
-        address receiver;
-        AssetType asset;
-        uint256 amount;
-        uint256 deadline;
-        uint256 arbitratorFee;
-        bool depositorConfirm;
-        bool receiverConfirm;
-        EscrowStatus status;
-        address nftAddress;
-        uint256 tokenId;
+        address depositor; // Depositor of funds into escrow & creator of escrow
+        address receiver; // Receiver of assets deposited into the escrow & renderer of goods and services
+        AssetType asset; // Type of asset to be deposited by creator
+        uint256 amount; // amount of asset to be deposited | for NFTs this field is zero
+        uint256 deadline; // How long escrow should run | so this is the stop time
+        uint256 arbitratorFee; // amount of fees paid to arbitrator
+        bool depositorConfirm; // bool to track depositor's confiramtion
+        bool receiverConfirm; // bool to track receiver's confirmation
+        EscrowStatus status; // Current status of Escrow
+        address nftAddress; // If asset if NFT this stores the address
+        uint256 tokenId; // token Id of stored address
     }
 
     ///////// mappings
@@ -137,7 +138,6 @@ contract Escrow{
         emit EscrowCreated(currentId);
 
         return(currentId);
-        
     }
 
  
@@ -175,9 +175,7 @@ contract Escrow{
         id++;
 
         emit EscrowCreated(currentId);
-
         return(currentId);
-        
     }
 
     /**

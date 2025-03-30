@@ -24,9 +24,9 @@
 
     However, There could be problems like one of the parties involved in the escrow agreement not fulfilling their part of the agreement. In cases like this, we have arbitrators in the system that will look into the agreement and depict whether funds should be refunded or released.
 
-    Arbitrators decisions cannot be questioned.
+    Arbitrators decisions are final.
 
-    In cases where the deadline for confirming agreement is reached and both parties have confirmed successfully, The arbitrator will release funds to the reciever and end the escrow.
+    In cases where the deadline for confirming agreement is reached and both parties have confirmed successfully, The arbitrator will release funds to the reciever and end the escrow, Otherwise the escrow is refunded.
 
     Assets this escrow can handle: NFTs, ERC20(USDC), native eth
 
