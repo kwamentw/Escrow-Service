@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 // imports
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
@@ -12,7 +13,7 @@ import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Recei
  * @author 4B
  * @notice Standard escrow contract
  */
-contract Escrow{
+contract Escrow is ReentrancyGuard{
     using SafeERC20 for IERC20;
 
     ///////// events
@@ -30,7 +31,7 @@ contract Escrow{
 
     //Type of asset deposited
     enum AssetType{ERC20, ERC721, Native}
-    
+
     // Current status of escrow
     enum EscrowStatus{NONE, SETTLED, REFUNDED}
 
@@ -104,7 +105,7 @@ contract Escrow{
      * @param newEscrow escrow to be created
      * @return id the id of the escrow created
      */
-    function createEscrow(EscrowInfo memory newEscrow) external  payable returns(uint256){
+    function createEscrow(EscrowInfo memory newEscrow) external nonReentrant payable returns(uint256){
         require(escrows[id].depositor == address(0), "depositor not set");
         require(newEscrow.depositor != address(0), "invalid depositor");
         require(newEscrow.receiver != address(0), "invalid receiver");
@@ -146,7 +147,7 @@ contract Escrow{
      * @param newEscrow new nft escrow to be cretaed
      * @return id the id of the escrow created
      */
-    function create721Escrow(EscrowInfo memory newEscrow) external  payable returns(uint256){
+    function create721Escrow(EscrowInfo memory newEscrow) external nonReentrant payable returns(uint256){
         require(escrows[id].depositor == address(0),"empty 721escrow");
         require(newEscrow.depositor != address(0),"invalid 721 depositor");
         require(newEscrow.receiver != address(0),"invalid 721 receiver");
@@ -208,7 +209,7 @@ contract Escrow{
      * This is regulated by the arbitrator
      * @param _id Id of the escrow
      */
-    function refundEscrow(uint256 _id) external onlyArbitrator(msg.sender){
+    function refundEscrow(uint256 _id) external nonReentrant onlyArbitrator(msg.sender){
         require(block.timestamp > escrows[_id].deadline,"Pending duration not expired");
         require(escrows[_id].status != EscrowStatus.REFUNDED,"Escrow already refunded");
         require(escrows[_id].receiverConfirm == false || escrows[_id].depositorConfirm == false, "Two parties Have Agreed! Funds need to be released");
@@ -250,7 +251,7 @@ contract Escrow{
      * Can only be called when the receiver & buy have confirmed
      * @param idd id of the escrow
      */
-    function releaseEscrow(uint256 idd) external onlyArbitrator(msg.sender){
+    function releaseEscrow(uint256 idd) external  nonReentrant onlyArbitrator(msg.sender){
         // check whether depositor and receiver has confirmed
         require(escrows[idd].receiverConfirm == true && escrows[idd].depositorConfirm == true, "Can't release escrow");
         // send tokens to receiver but check which token type before
