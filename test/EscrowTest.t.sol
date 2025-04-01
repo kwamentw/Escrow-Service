@@ -197,7 +197,6 @@ contract EscrowTest is Test{
         assertEq(firstNatEscrow.depositor, address(0xabc));
         assertNotEq(firstNatEscrow.deadline,0);
         assertEq(firstNatEscrow.amount, 50e18);
-        //todo: should add a balance check 
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -344,7 +343,7 @@ contract EscrowTest is Test{
     }
 
 
-    function testRefundEscrow() public{
+    function testRefundNativeEscrow() public{
         uint256 id = createNativeEscrow();
         vm.warp(32 days);
 
@@ -509,7 +508,7 @@ contract EscrowTest is Test{
         escrow.releaseEscrow(id);
     }
 
-    function testReleaseEscrow() public{
+    function testReleaseNativeEscrow() public{
         uint256 id = createNativeEscrow();
         vm.warp(20 days);
 
@@ -534,7 +533,7 @@ contract EscrowTest is Test{
         assertTrue(released);
     }
 
-    function testCannotReleaseEscrow() public{
+    function testCannotReleaseNatvEscrow() public{
         uint256 id= createNativeEscrow();
         vm.warp(20 days);
 
