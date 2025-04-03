@@ -26,6 +26,8 @@ contract Escrow is ReentrancyGuard{
     event EscrowRefunded(uint256 id);
     // Emits when a escrow is released to reciever
     event EscrowReleased(uint256 id, uint256 amount);
+    // emit the address of the arbitrator removed
+    event ArbitratorRemoved(address arbitratorToBeRemoved);
 
     ///////// enum
 
@@ -204,7 +206,17 @@ contract Escrow is ReentrancyGuard{
         emit ArbitratorAdded(newArbitrator);
     }
 
-    //@TODO: add remove arbitrator
+
+    /**
+     * Removes pre-existing arbitrator
+     * @param arbitrator address of the arbitrator to remove
+     * only the owner can remove an arbitrator
+     */
+    function removeArbitrator(address arbitrator) external onlyOwner{
+        require(arbitrators[arbitrator]== true, "Not Arbitrator");
+        arbitrators[arbitrator] = false;
+        emit ArbitratorRemoved(arbitrator);
+    }
 
     /**
      * Refunds the amount/nft in the escrow back to the depositor/depositor
