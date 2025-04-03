@@ -118,6 +118,8 @@ contract EscrowTest is Test{
     ////////////////////// CREATE ESCROW TEST FUNCTIONS ///////////////////////////
     ///////////////////////////////////////////////////////////////////////////////
 
+    /// Testing whether user can create multiple escrow at once
+
     function testCanCreateDiffTypOfEscrowAtOnce() public{
         uint256 id = createNativeEscrow();
         uint256 id2 = createERC20Escrow();
@@ -202,6 +204,8 @@ contract EscrowTest is Test{
     ////////////////////////////////////////////////////////////////////////
     ////////////////////// REFUND TEST FUNCTIONS ///////////////////////////
     ////////////////////////////////////////////////////////////////////////
+
+    /// Test to check whether refund works and reverts when some conditions are met
 
     function testRefundE20Escrow() public{
         uint256 id = createERC20Escrow();
@@ -427,6 +431,8 @@ contract EscrowTest is Test{
     /////////////////////////////////////////////////////////////////////////
     ////////////////////// RELEASE TEST FUNCTIONS ///////////////////////////
     /////////////////////////////////////////////////////////////////////////
+
+    /// Test to release tokens to receiver and to revert when important parmaters are met
     
     function testReleaseE20Escrow() public{
         uint256 id = createERC20Escrow();
@@ -553,6 +559,8 @@ contract EscrowTest is Test{
     ////////////////////// CONFIRM TEST FUNCTIONS ///////////////////////////
     /////////////////////////////////////////////////////////////////////////
 
+    /// Test to see whether users can confirm escrows and to revert when caller is not receiver or deposit
+
     function testConfirmEscrow() public{
         uint256 id = createNativeEscrow();
 
@@ -609,6 +617,8 @@ contract EscrowTest is Test{
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////// ARBITRATOR TEST FUNCTIONS ///////////////////////////
     ////////////////////////////////////////////////////////////////////////////
+
+    /// TO test whether owner can add arbitrators and revert if arbitrator already exists
 
     function testAddArbitrator() public{
         address newArbitrator = address(0xabccc);

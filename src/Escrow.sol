@@ -204,6 +204,8 @@ contract Escrow is ReentrancyGuard{
         emit ArbitratorAdded(newArbitrator);
     }
 
+    //@TODO: add remove arbitrator
+
     /**
      * Refunds the amount/nft in the escrow back to the depositor/depositor
      * This is regulated by the arbitrator
