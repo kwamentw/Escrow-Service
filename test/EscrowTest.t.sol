@@ -635,6 +635,18 @@ contract EscrowTest is Test{
         escrow.addArbitrator(arbOne);
     }
 
+    function testRemoveArbitrator() public{
+        address arbitratorToAdd = address(0xDDD);
+        escrow.addArbitrator(arbitratorToAdd);
+
+        console2.log("Arbitrator??", escrow.getArbitratorStatus(arbitratorToAdd));
+        assertTrue(escrow.getArbitratorStatus(arbitratorToAdd));
+
+        escrow.removeArbitrator(arbitratorToAdd);
+        console2.log("Arbitrator??", escrow.getArbitratorStatus(arbitratorToAdd));
+        assertFalse(escrow.getArbitratorStatus(arbitratorToAdd));
+    }
+
     ///////////////////////////////////////////////////////////////////////
     ////////////////////// OTHER TEST FUNCTIONS ///////////////////////////
     ///////////////////////////////////////////////////////////////////////
