@@ -647,6 +647,18 @@ contract EscrowTest is Test{
         assertFalse(escrow.getArbitratorStatus(arbitratorToAdd));
     }
 
+    function testRemoveNonExistentArbitrator() public{
+        address arbitratorToAdd = address(0xDDD);
+        escrow.addArbitrator(arbitratorToAdd);
+        // but lets try to remove a different arbitrator instead
+        // note this arbitrator does not exist
+
+        address fakeArbitrator = address(0xFFF);
+        vm.expectRevert();
+        escrow.removeArbitrator(fakeArbitrator);
+
+    }
+
     ///////////////////////////////////////////////////////////////////////
     ////////////////////// OTHER TEST FUNCTIONS ///////////////////////////
     ///////////////////////////////////////////////////////////////////////
