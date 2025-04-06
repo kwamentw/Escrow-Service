@@ -219,6 +219,17 @@ contract Escrow is ReentrancyGuard{
     }
 
     /**
+     * TODO
+     * a function to send arbitrator fees to specific arbitrator
+     * looking at refundEscrow when the arbitrator invokes the refund the funds is being split between the depositor and arbitrator in respective quantities
+     * Implement something similar when releasing funds
+     * so split the funds in the contract between the receiver and the arbitrator wehen releasing
+     * But this poses the risk of leaving some funds in the contract
+     * How we can deal with this is sending the remaining funds(amountInContract - amountToBereleased) to arbitrator 
+     * After TEST: if we have stuck funds
+     */
+
+    /**
      * Refunds the amount/nft in the escrow back to the depositor/depositor
      * This is regulated by the arbitrator
      * @param _id Id of the escrow

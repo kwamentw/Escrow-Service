@@ -659,6 +659,17 @@ contract EscrowTest is Test{
 
     }
 
+    function testRemoveArbitratorTwice() public {
+        address arbitratorToAdd1 = address(0xDDD);
+        address arbitratorToAdd2 = address(0xAAA);
+        escrow.addArbitrator(arbitratorToAdd1);
+        escrow.addArbitrator(arbitratorToAdd2);
+
+        escrow.removeArbitrator(arbitratorToAdd1);
+        vm.expectRevert();
+        escrow.removeArbitrator(arbitratorToAdd1);
+    }
+
     ///////////////////////////////////////////////////////////////////////
     ////////////////////// OTHER TEST FUNCTIONS ///////////////////////////
     ///////////////////////////////////////////////////////////////////////
