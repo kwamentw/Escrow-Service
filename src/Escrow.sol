@@ -219,17 +219,6 @@ contract Escrow is ReentrancyGuard{
     }
 
     /**
-     * TODO
-     * a function to send arbitrator fees to specific arbitrator
-     * looking at refundEscrow when the arbitrator invokes the refund the funds is being split between the depositor and arbitrator in respective quantities
-     * Implement something similar when releasing funds
-     * so split the funds in the contract between the receiver and the arbitrator wehen releasing
-     * But this poses the risk of leaving some funds in the contract
-     * How we can deal with this is sending the remaining funds(amountInContract - amountToBereleased) to arbitrator 
-     * After TEST: if we have stuck funds
-     */
-
-    /**
      * Refunds the amount/nft in the escrow back to the depositor/depositor
      * This is regulated by the arbitrator
      * @param _id Id of the escrow
@@ -251,7 +240,7 @@ contract Escrow is ReentrancyGuard{
         }else if(escrows[_id].asset == AssetType.ERC721){
             address nftContract = escrows[_id].nftAddress;
             uint256 tokenID = escrows[_id].tokenId;
-            (bool okay, )=payable(msg.sender).call{value: fee}("");
+            (bool okay, )=payable(msg.sender).call{value: arbitratorFeeForNFT}("");
             require(okay);
             IERC721(nftContract).safeTransferFrom(address(this), escrows[_id].depositor, tokenID);
 
@@ -282,17 +271,21 @@ contract Escrow is ReentrancyGuard{
         // send tokens to receiver but check which token type before
         uint256 amount = escrows[idd].amount;
         address receiver = escrows[idd].receiver;
+        uint256 fee = escrows[idd].arbitratorFee;
 
         if(escrows[idd].asset == AssetType.ERC20){
-            if(amount > token.balanceOf(address(this))){
+            if(amount + fee > token.balanceOf(address(this))){
                 revert(" Insufficient funds ");
             }
             escrows[idd].amount = 0;
             token.safeTransfer(receiver, amount);
+            token.safeTransfer(msg.sender, fee);
         }else if(escrows[idd].asset == AssetType.Native){
-            if(amount <= address(this).balance){
+            if(amount + fee <= address(this).balance){
                 (bool ok, ) = payable(receiver).call{value: amount}("");
                 require(ok);
+                (bool done, ) = payable(msg.sender).call{value: fee}("");
+                require(done);
             }else{
                 revert("Not enough balance");
             }

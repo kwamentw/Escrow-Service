@@ -452,8 +452,10 @@ contract EscrowTest is Test{
         escrow.releaseEscrow(id);
 
         uint256 balAfter = IERC20(token).balanceOf(firstERC20Escrow.receiver);
+        uint256 arbitratorBal = IERC20(token).balanceOf(address(0xFFF));
 
         assertGt(balAfter, balBefore);
+        assertGt(arbitratorBal, 0);
         assertTrue(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.SETTLED);
     }
 
@@ -534,6 +536,7 @@ contract EscrowTest is Test{
         uint256 balAfter = address(0xbac).balance;
 
         assertGt(balAfter,balbef);
+        assertGt(address(0xfff).balance, 0);
         bool released;
         if(escrow.getUserEscrow(id).status == Escrow.EscrowStatus.SETTLED){released = true;}
         assertTrue(released);
