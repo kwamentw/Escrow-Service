@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Pausable} from "@openzeppelin/contracts/security/Pausable.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 /**
@@ -13,7 +14,7 @@ import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Recei
  * @author 4B
  * @notice Standard escrow contract
  */
-contract Escrow is ReentrancyGuard{
+contract Escrow is ReentrancyGuard, Pausable{
     using SafeERC20 for IERC20;
 
     ///////// events
@@ -107,7 +108,7 @@ contract Escrow is ReentrancyGuard{
      * @param newEscrow escrow to be created
      * @return id the id of the escrow created
      */
-    function createEscrow(EscrowInfo memory newEscrow) external nonReentrant payable returns(uint256){
+    function createEscrow(EscrowInfo memory newEscrow) external nonReentrant whenNotPaused payable returns(uint256){
         require(escrows[id].depositor == address(0), "depositor not set");
         require(newEscrow.depositor != address(0), "invalid depositor");
         require(newEscrow.receiver != address(0), "invalid receiver");
@@ -149,7 +150,7 @@ contract Escrow is ReentrancyGuard{
      * @param newEscrow new nft escrow to be cretaed
      * @return id the id of the escrow created
      */
-    function create721Escrow(EscrowInfo memory newEscrow) external nonReentrant payable returns(uint256){
+    function create721Escrow(EscrowInfo memory newEscrow) external nonReentrant whenNotPaused payable returns(uint256){
         require(escrows[id].depositor == address(0),"empty 721escrow");
         require(newEscrow.depositor != address(0),"invalid 721 depositor");
         require(newEscrow.receiver != address(0),"invalid 721 receiver");
@@ -200,7 +201,7 @@ contract Escrow is ReentrancyGuard{
      * only owner can add
      * @param newArbitrator address of the new arbitrator
      */
-    function addArbitrator(address newArbitrator) external onlyOwner {
+    function addArbitrator(address newArbitrator) external whenNotPaused onlyOwner {
         require(arbitrators[newArbitrator]== false, "already an arbitrator");
         arbitrators[newArbitrator] = true;
         emit ArbitratorAdded(newArbitrator);
@@ -223,7 +224,7 @@ contract Escrow is ReentrancyGuard{
      * This is regulated by the arbitrator
      * @param _id Id of the escrow
      */
-    function refundEscrow(uint256 _id) external nonReentrant onlyArbitrator(msg.sender){
+    function refundEscrow(uint256 _id) external nonReentrant whenNotPaused onlyArbitrator(msg.sender){
         require(block.timestamp > escrows[_id].deadline,"Pending duration not expired");
         require(escrows[_id].status != EscrowStatus.REFUNDED,"Escrow already refunded");
         require(escrows[_id].receiverConfirm == false || escrows[_id].depositorConfirm == false, "Two parties Have Agreed! Funds need to be released");
@@ -265,7 +266,7 @@ contract Escrow is ReentrancyGuard{
      * Can only be called when the receiver & buy have confirmed
      * @param idd id of the escrow
      */
-    function releaseEscrow(uint256 idd) external  nonReentrant onlyArbitrator(msg.sender){
+    function releaseEscrow(uint256 idd) external  nonReentrant whenNotPaused onlyArbitrator(msg.sender){
         // check whether depositor and receiver has confirmed
         require(escrows[idd].receiverConfirm == true && escrows[idd].depositorConfirm == true, "Can't release escrow");
         // send tokens to receiver but check which token type before
@@ -311,11 +312,19 @@ contract Escrow is ReentrancyGuard{
      * Any tokens aside the predefined tokens will be sent to owner
      * @param _token address of locked token
      */
-    function releaseLockedTkns(address _token) external onlyOwner{
+    function releaseLockedTkns(address _token) external whenNotPaused onlyOwner{
         if(IERC20(_token).balanceOf(address(this)) > 0){
             uint256 amount = IERC20(_token).balanceOf(address(this));
             IERC20(_token).safeTransfer(owner, amount);
         }
+    }
+
+    function pause() external onlyOwner{
+        _pause();
+    }
+
+    function unpause() external onlyOwner{
+        _unpause();
     }
 
     /**

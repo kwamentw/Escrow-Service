@@ -703,6 +703,28 @@ contract EscrowTest is Test{
         escrow.releaseLockedTkns(unAcceptedToken);
     }
 
+    function testPause() public{
+        escrow.pause();
+
+        // let us try to call any of the function with the whenNotPaused modifier
+
+        vm.expectRevert(); // we'll see that it reverts with a Pause error
+        createNativeEscrow();
+    }
+
+    function testUnPause() public {
+        escrow.pause();
+
+        vm.expectRevert();
+        createNativeEscrow();
+
+        // after we unpause the protocol 
+        // we will see that the function does not revert anymore
+
+        escrow.unpause();
+        createNativeEscrow();
+    }
+
     ////////////////////////////////////////////////////////////////////////
     //////////////////////     FUZZING TEST      ///////////////////////////
     ////////////////////////////////////////////////////////////////////////
