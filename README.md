@@ -2,7 +2,7 @@
 
 **This repository provides a Solidity implementation of an Escrow Smart Contract, designed to enable secure transactions between two parties by holding funds until agreed-upon conditions are met before transfer to receiver. The contract supports NFTs, native tokens, and stablecoins (e.g. USDC). It acts as a mediator to ensure trust and prevent fraud during transactions.**
 
-## Features 
+## Main Features 
 
     🔒 Secure Fund Storage: 💰 Funds are securely held within the smart contract until the specified release conditions are met.
 

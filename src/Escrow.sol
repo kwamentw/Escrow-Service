@@ -102,6 +102,14 @@ contract Escrow is ReentrancyGuard, Pausable{
         _;
     }
 
+    //TODO
+    modifier isBlacklisted{
+        /**
+         * Checks whether user is blacklisted
+         * before execution
+         */
+    }
+
 
     /**
      * Creates a new erc20 escrow or Native token escrow for depositor/depositor
@@ -319,12 +327,37 @@ contract Escrow is ReentrancyGuard, Pausable{
         }
     }
 
+    /**
+     * A function to pause the contract
+     * Only owner can call this
+     */
     function pause() external onlyOwner{
         _pause();
     }
 
+    /**
+     * A function that unpauses a paused contract
+     * Only owner can call this
+     */
     function unpause() external onlyOwner{
         _unpause();
+    }
+
+    //TODO
+    function addToBlacklists() public onlyOwner{
+        /**
+         * Adds a user to a black list
+         * if user does not adhere to platform rules
+         * Think there shoule be a mapping to store all this
+         */
+    }
+    //TODO
+    function removeFromBlacklist() public onlyOwner {
+        /**
+         * removes user from blaccklists
+         * blacklist mapping must be updated
+         * emit an event too
+         */
     }
 
     /**
