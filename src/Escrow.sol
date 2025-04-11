@@ -29,6 +29,10 @@ contract Escrow is ReentrancyGuard, Pausable{
     event EscrowReleased(uint256 id, uint256 amount);
     // emit the address of the arbitrator removed
     event ArbitratorRemoved(address arbitratorToBeRemoved);
+    // emits the address of the blacklisted user
+    event Blacklisted(address acct);
+    // emits the address of the user removed from blacklist
+    event RemovedFromBlacklist(address acct);
 
     ///////// enum
 
@@ -73,6 +77,7 @@ contract Escrow is ReentrancyGuard, Pausable{
     IERC20 token; //I think we'll fuck with usdc for now 
     uint32 arbitratorFeeBPS; //it will 200BPS of every deposit
     uint256 arbitratorFeeForNFT; // fee charged in native currency for every deposit
+    mapping(address user => bool blacklisted) blacklist; //mapped list of blacklisted users
 
 
 
@@ -102,12 +107,12 @@ contract Escrow is ReentrancyGuard, Pausable{
         _;
     }
 
-    //TODO
+    /**
+     * Only users not in the blacklist of the protocol can interact with funcs with this modifier
+     */
     modifier isBlacklisted{
-        /**
-         * Checks whether user is blacklisted
-         * before execution
-         */
+        if(blacklist[msg.sender]){revert ("You are blacklisted");}
+        _;
     }
 
 
@@ -116,7 +121,7 @@ contract Escrow is ReentrancyGuard, Pausable{
      * @param newEscrow escrow to be created
      * @return id the id of the escrow created
      */
-    function createEscrow(EscrowInfo memory newEscrow) external nonReentrant whenNotPaused payable returns(uint256){
+    function createEscrow(EscrowInfo memory newEscrow) external nonReentrant whenNotPaused isBlacklisted payable returns(uint256){
         require(escrows[id].depositor == address(0), "depositor not set");
         require(newEscrow.depositor != address(0), "invalid depositor");
         require(newEscrow.receiver != address(0), "invalid receiver");
@@ -158,12 +163,13 @@ contract Escrow is ReentrancyGuard, Pausable{
      * @param newEscrow new nft escrow to be cretaed
      * @return id the id of the escrow created
      */
-    function create721Escrow(EscrowInfo memory newEscrow) external nonReentrant whenNotPaused payable returns(uint256){
+    function create721Escrow(EscrowInfo memory newEscrow) external nonReentrant whenNotPaused isBlacklisted payable returns(uint256){
         require(escrows[id].depositor == address(0),"empty 721escrow");
         require(newEscrow.depositor != address(0),"invalid 721 depositor");
         require(newEscrow.receiver != address(0),"invalid 721 receiver");
         require(newEscrow.deadline > block.timestamp,"invalid deadline");
         require(newEscrow.status == EscrowStatus.NONE,"not a fresh escrow");
+        require(msg.sender == newEscrow.depositor,"not depositor");
         
         userToActivEscrow[msg.sender] = id;
 
@@ -209,7 +215,7 @@ contract Escrow is ReentrancyGuard, Pausable{
      * only owner can add
      * @param newArbitrator address of the new arbitrator
      */
-    function addArbitrator(address newArbitrator) external whenNotPaused onlyOwner {
+    function addArbitrator(address newArbitrator) external whenNotPaused onlyOwner isBlacklisted {
         require(arbitrators[newArbitrator]== false, "already an arbitrator");
         arbitrators[newArbitrator] = true;
         emit ArbitratorAdded(newArbitrator);
@@ -343,21 +349,23 @@ contract Escrow is ReentrancyGuard, Pausable{
         _unpause();
     }
 
-    //TODO
-    function addToBlacklists() public onlyOwner{
-        /**
-         * Adds a user to a black list
-         * if user does not adhere to platform rules
-         * Think there shoule be a mapping to store all this
-         */
+    /**
+     * Adds a user to the protocol's blacklist
+     * This prevents the user from creating an escrow
+     */
+    function addToBlacklist(address account) public onlyOwner{
+        require(!blacklist[account], "already blacklisted");
+        blacklist[account] = true;
+        emit Blacklisted(account);
     }
-    //TODO
-    function removeFromBlacklist() public onlyOwner {
-        /**
-         * removes user from blaccklists
-         * blacklist mapping must be updated
-         * emit an event too
-         */
+    
+    /**
+     * Removes a user from blacklist
+     */
+    function removeFromBlacklist(address account) public onlyOwner {
+        require(blacklist[account], "not blacklisted");
+        blacklist[account] = false;
+        emit RemovedFromBlacklist(account);
     }
 
     /**
