@@ -77,7 +77,7 @@ contract Escrow is ReentrancyGuard, Pausable{
     IERC20 token; //I think we'll fuck with usdc for now 
     uint32 arbitratorFeeBPS; //it will 200BPS of every deposit
     uint256 arbitratorFeeForNFT; // fee charged in native currency for every deposit
-    mapping(address user => bool blacklisted) blacklist; //mapped list of blacklisted users
+    mapping(address user => bool blacklisted) public blacklist; //mapped list of blacklisted users
 
 
 

@@ -725,6 +725,28 @@ contract EscrowTest is Test{
         createNativeEscrow();
     }
 
+    function testAddBlacklists() public{
+        escrow.addToBlacklist(address(0xabc));
+        assertTrue(escrow.blacklist(address(0xabc)));
+
+        vm.expectRevert();
+        createNativeEscrow();
+    }
+
+    function testRemoveBlacklists() public{
+        escrow.addToBlacklist(address(0xabc));
+
+        // becuase depositor is part of the blacklists watch it revert
+        vm.expectRevert();
+        createNativeEscrow();
+
+        escrow.removeFromBlacklist(address(0xabc));
+        assertFalse(escrow.blacklist(address(0xabc)));
+
+        //after we remove the depositor from the blacklists watch the escrow be created successfully
+        createNativeEscrow();
+    }
+
     ////////////////////////////////////////////////////////////////////////
     //////////////////////     FUZZING TEST      ///////////////////////////
     ////////////////////////////////////////////////////////////////////////
@@ -753,7 +775,7 @@ contract EscrowTest is Test{
         deal(address(0xabc), amount + arbitratorFee);
 
         vm.prank(address(0xabc));
-        uint256 _id = escrow.createEscrow{value: amount + arbitratorFee}(firstEscrow);
+        escrow.createEscrow{value: amount + arbitratorFee}(firstEscrow);
     }
 
     function testFuzzCreateE20Escrow(uint256 amount) public{
@@ -782,7 +804,7 @@ contract EscrowTest is Test{
         IERC20(token).approve(address(escrow), type(uint256).max);
 
         vm.prank(address(0xabc));
-        uint256 _id = escrow.createEscrow(firstEscrow);
+        escrow.createEscrow(firstEscrow);
     }
 
     function testFuzzCreateNFTEscrow(uint256 id) public {
