@@ -14,6 +14,10 @@
 
     🕵️ Transparency and Decentralization: All 📊 transactions are recorded on the 🔐 blockchain, ensuring a 🔓 transparent and tamper-proof system.
 
+    🔧 Blacklists: Users that do not conform to platform rules can be blacklisted, and as a result they will not be able to create escrows.
+
+    🔒 Pausability: Protocol can be paused by owners for obvious reasons, this will make users not be able to access the system.
+
 
 ## How this contract works
 
