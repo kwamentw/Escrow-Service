@@ -75,7 +75,7 @@ contract Escrow is ReentrancyGuard, Pausable{
     uint256 immutable BASIS_POINT = 1e4;
     address owner; //owner of contract
     IERC20 token; //I think we'll fuck with usdc for now 
-    uint32 arbitratorFeeBPS; //it will 200BPS of every deposit
+    uint32 arbitratorFeeBPS; //it will be 200BPS of every deposit
     uint256 arbitratorFeeForNFT; // fee charged in native currency for every deposit
     mapping(address user => bool blacklisted) public blacklist; //mapped list of blacklisted users
 
@@ -240,7 +240,7 @@ contract Escrow is ReentrancyGuard, Pausable{
      */
     function refundEscrow(uint256 _id) external nonReentrant whenNotPaused onlyArbitrator(msg.sender){
         require(block.timestamp > escrows[_id].deadline,"Pending duration not expired");
-        require(escrows[_id].status != EscrowStatus.REFUNDED,"Escrow already refunded");
+        require(escrows[_id].status == EscrowStatus.NONE,"Escrow already refunded/settled");
         require(escrows[_id].receiverConfirm == false || escrows[_id].depositorConfirm == false, "Two parties Have Agreed! Funds need to be released");
 
         uint256 fee = escrows[_id].arbitratorFee;
@@ -281,6 +281,7 @@ contract Escrow is ReentrancyGuard, Pausable{
      * @param idd id of the escrow
      */
     function releaseEscrow(uint256 idd) external  nonReentrant whenNotPaused onlyArbitrator(msg.sender){
+        require(escrows[idd].status == EscrowStatus.NONE, "Action has already been taken on the escrow");
         // check whether depositor and receiver has confirmed
         require(escrows[idd].receiverConfirm == true && escrows[idd].depositorConfirm == true, "Can't release escrow");
         // send tokens to receiver but check which token type before
@@ -331,6 +332,16 @@ contract Escrow is ReentrancyGuard, Pausable{
             uint256 amount = IERC20(_token).balanceOf(address(this));
             IERC20(_token).safeTransfer(owner, amount);
         }
+    }
+
+    function cancelEscrow() external{
+        /**
+         * This function cancels current escrow of msg.sender
+         * escrow should be cancelled if only deadline is reached
+         * the two parties confirmation should be false
+         * escrow status should be none
+         * amount deposited must be refunded plus fees
+         */
     }
 
     /**
