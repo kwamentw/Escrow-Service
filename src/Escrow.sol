@@ -334,7 +334,7 @@ contract Escrow is ReentrancyGuard, Pausable{
         }
     }
 
-    function cancelEscrow() external{
+    function cancelEscrow(uint256 idd) external{
         /**
          * This function cancels current escrow of msg.sender
          * escrow should be cancelled if only deadline is reached
@@ -342,6 +342,11 @@ contract Escrow is ReentrancyGuard, Pausable{
          * escrow status should be none
          * amount deposited must be refunded plus fees
          */
+        require(block.timestamp > escrows[idd].deadline,"Deadline is not reached");
+        require(escrows[idd].receiverConfirm == false && escrows[idd].depositorConfirm == false,"");
+        require(escrows[idd].status == EscrowStatus.NONE, "Already settled");
+
+        //now refund with fees 
     }
 
     /**
