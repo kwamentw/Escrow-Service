@@ -342,11 +342,35 @@ contract Escrow is ReentrancyGuard, Pausable{
          * escrow status should be none
          * amount deposited must be refunded plus fees
          */
+        require(escrows[idd].depositor == msg.sender, "Not Authorised");
         require(block.timestamp > escrows[idd].deadline,"Deadline is not reached");
         require(escrows[idd].receiverConfirm == false && escrows[idd].depositorConfirm == false,"");
         require(escrows[idd].status == EscrowStatus.NONE, "Already settled");
 
-        //now refund with fees 
+        if(escrows[idd].asset == AssetType.ERC20){
+            uint256 amountToRefund = escrows[idd].amount + escrows[idd].arbitratorFee;
+            require(token.balanceOf(address(this))>= amountToRefund,"Not enough funds");
+            token.safeTransfer(escrows[idd].depositor, amountToRefund);
+
+        }else if(escrows[idd].asset == AssetType.Native){
+            uint256 amountToRefund = escrows[idd].amount + escrows[idd].arbitratorFee;
+            require(address(this).balance >= amountToRefund,"Not enough balance");
+            (bool ok,) = payable(escrows[idd].depositor).call{value: amountToRefund}("");
+            require(ok);
+
+        }else{
+            // handle as NFT
+            (bool ok,) = payable(escrows[idd].depositor).call{value: escrows[idd].arbitratorFee}("");
+            require(ok);
+            address nftAddress = escrows[idd].nftAddress;
+            uint256 tokenID = escrows[idd].tokenId;
+            IERC721(nftAddress).safeTransferFrom(address(this), escrows[idd].depositor, tokenID);
+        }
+
+        delete escrows[idd];
+        delete userToActivEscrow[msg.sender];
+
+        //emit an event
     }
 
     /**
