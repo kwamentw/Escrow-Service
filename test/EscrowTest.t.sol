@@ -747,6 +747,39 @@ contract EscrowTest is Test{
         createNativeEscrow();
     }
 
+    function testCancelNativeEscrow() public{
+        uint256 idee = createNativeEscrow();
+        Escrow.EscrowInfo memory escrowOneB4 = escrow.getUserEscrow(idee);
+
+        address sender = escrowOneB4.depositor;
+        vm.warp(31 days);
+
+        vm.prank(sender);
+        escrow.cancelEscrow(idee);
+
+        Escrow.EscrowInfo memory escrowOneAfta = escrow.getUserEscrow(idee);
+
+        assertEq(escrowOneAfta.depositor, address(0));
+        assertEq(escrowOneAfta.amount, 0);
+    }
+
+    function testCancelNftEscrow() public{
+        uint256 idee = createNftEscrow();
+        Escrow.EscrowInfo memory escrowB4 = escrow.getUserEscrow(idee);
+
+        address sender = escrowB4.depositor;
+        vm.warp(31 days);
+
+        vm.prank(sender);
+        escrow.cancelEscrow(idee);
+
+        Escrow.EscrowInfo memory escrowAfta = escrow.getUserEscrow(idee);
+
+        assertNotEq(escrowB4.nftAddress, escrowAfta.nftAddress);
+        assertEq(escrowAfta.deadline, 0);
+
+    }
+
     ////////////////////////////////////////////////////////////////////////
     //////////////////////     FUZZING TEST      ///////////////////////////
     ////////////////////////////////////////////////////////////////////////
