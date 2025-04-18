@@ -780,6 +780,20 @@ contract EscrowTest is Test{
 
     }
 
+    function testCancelERC20Escrow() public{
+        uint256 idee = createERC20Escrow();
+        Escrow.EscrowInfo memory escrowB4 = escrow.getUserEscrow(idee);
+        address sender = escrowB4.depositor;
+
+        vm.warp(block.timestamp + 31 days);
+        vm.prank(sender);
+        escrow.cancelEscrow(idee);
+
+        Escrow.EscrowInfo memory escrowAfta = escrow.getUserEscrow(idee);
+        assertEq(escrowAfta.deadline,0);
+        assertNotEq(escrowB4.depositor, escrowAfta.depositor);
+    }
+
     ////////////////////////////////////////////////////////////////////////
     //////////////////////     FUZZING TEST      ///////////////////////////
     ////////////////////////////////////////////////////////////////////////
