@@ -33,7 +33,7 @@ contract Escrow is ReentrancyGuard, Pausable{
     event Blacklisted(address acct);
     // emits the address of the user removed from blacklist
     event RemovedFromBlacklist(address acct);
-    // emits when an event when escrow is ccancelled by user
+    // emits when an event when escrow is cancelled by user
     event EscrowCancelled(uint256 escrowId);
 
     ///////// enum
@@ -336,6 +336,11 @@ contract Escrow is ReentrancyGuard, Pausable{
         }
     }
 
+    /**
+     * Cancels escrow after deadline has been reached and there is no confirmation
+     * Can only be called by depositor of escrow
+     * Deadline of escrow hass to be passed
+     */
     function cancelEscrow(uint256 idd) external{
         require(escrows[idd].depositor == msg.sender, "Not Authorised");
         require(block.timestamp > escrows[idd].deadline,"Deadline is not reached");
@@ -365,7 +370,6 @@ contract Escrow is ReentrancyGuard, Pausable{
         delete escrows[idd];
         delete userToActivEscrow[msg.sender];
 
-        //emit an event
         emit EscrowCancelled(idd);
     }
 
