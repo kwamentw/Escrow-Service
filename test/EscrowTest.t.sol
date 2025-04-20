@@ -763,6 +763,21 @@ contract EscrowTest is Test{
         assertEq(escrowOneAfta.amount, 0);
     }
 
+    function testCancelEscrowBeforeDeadline() public{
+        uint256 idee = createNativeEscrow();
+        Escrow.EscrowInfo memory escrw = escrow.getUserEscrow(idee);
+
+        address sender = escrw.depositor;
+
+        //assume block.timestamp has not reached deadlline
+        //deadline is 31 days
+        vm.warp(14 days);
+        vm.prank(sender);
+
+        vm.expectRevert();
+        escrow.cancelEscrow(idee);
+    }
+
     function testCancelNftEscrow() public{
         uint256 idee = createNftEscrow();
         Escrow.EscrowInfo memory escrowB4 = escrow.getUserEscrow(idee);

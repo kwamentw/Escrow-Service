@@ -14,7 +14,7 @@
 
     🕵️ Transparency and Decentralization: All 📊 transactions are recorded on the 🔐 blockchain, ensuring a 🔓 transparent and tamper-proof system.
 
-    🔧 Blacklists: Users that do not conform to platform rules can be blacklisted, and as a result they will not be able to create escrows.
+    🔧 Blacklists: Users that do not conform to platform rules can be blacklisted by owner, and as a result they will not be able to create escrows.
 
     🔒 Pausability: Protocol can be paused by owners for obvious reasons, this will make users not be able to access the system.
 
@@ -43,7 +43,7 @@
 
         If both parties confirm successfully before the ⏳ deadline, the arbitrator releases 💰 funds to the receiver.
 
-        If the ⏰ deadline passes without confirmation, the 💰 funds are refunded to the depositor.
+        If the ⏰ deadline passes without confirmation, the 💰 funds are refunded to the depositor either by canceling escrow or waiting for arbitrator to refund.
 
 ## Key Actors
     * 🔧 Owner: The administrator and owner of the protocol.
