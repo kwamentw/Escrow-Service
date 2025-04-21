@@ -712,6 +712,15 @@ contract EscrowTest is Test{
         createNativeEscrow();
     }
 
+    function testRevertUnauthorisedPauser() public{
+        // unauthorised user to call pause
+        address user1 = address(0xAAA);
+
+        vm.prank(user1);
+        vm.expectRevert();
+        escrow.pause();
+    }
+
     function testUnPause() public {
         escrow.pause();
 
