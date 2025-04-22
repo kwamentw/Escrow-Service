@@ -344,7 +344,7 @@ contract Escrow is ReentrancyGuard, Pausable{
     function cancelEscrow(uint256 idd) external{
         require(escrows[idd].depositor == msg.sender, "Not Authorised");
         require(block.timestamp > escrows[idd].deadline,"Deadline is not reached");
-        require(escrows[idd].receiverConfirm == false && escrows[idd].depositorConfirm == false,"");
+        require(escrows[idd].receiverConfirm == false && escrows[idd].depositorConfirm == false,"Wait for arbitrage");
         require(escrows[idd].status == EscrowStatus.NONE, "Already settled");
 
         if(escrows[idd].asset == AssetType.ERC20){

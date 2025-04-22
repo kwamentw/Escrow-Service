@@ -772,6 +772,25 @@ contract EscrowTest is Test{
         assertEq(escrowOneAfta.amount, 0);
     }
 
+    function testRevertUnauthorisedCanceller() public{
+        uint256 idee = createNativeEscrow();
+        Escrow.EscrowInfo memory escrowOne = escrow.getUserEscrow(idee);
+
+        vm.warp(31 days);
+
+        address anyUser = address(0xaaa);
+        vm.prank(anyUser);
+
+        vm.expectRevert(); //error: not authorised
+        escrow.cancelEscrow(idee);
+    }
+
+    function testCancelRevertOneUserConfirmd() public{
+        /**
+         * Check whether it reverts when onr user confirms
+         */
+    }
+
     function testCancelEscrowBeforeDeadline() public{
         uint256 idee = createNativeEscrow();
         Escrow.EscrowInfo memory escrw = escrow.getUserEscrow(idee);
