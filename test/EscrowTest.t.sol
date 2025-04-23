@@ -777,18 +777,29 @@ contract EscrowTest is Test{
         Escrow.EscrowInfo memory escrowOne = escrow.getUserEscrow(idee);
 
         vm.warp(31 days);
-
         address anyUser = address(0xaaa);
-        vm.prank(anyUser);
 
+        vm.prank(anyUser);
         vm.expectRevert(); //error: not authorised
         escrow.cancelEscrow(idee);
     }
 
     function testCancelRevertOneUserConfirmd() public{
-        /**
-         * Check whether it reverts when onr user confirms
-         */
+        uint256 idee = createNativeEscrow();
+        Escrow.EscrowInfo memory escrowOne = escrow.getUserEscrow(idee);
+
+        address confirmer = escrowOne.receiver;
+        address sender = escrowOne.depositor;
+
+        vm.prank(confirmer);
+        escrow.confirmEscrow(idee);
+
+        vm.warp(31 days);
+
+        vm.prank(sender);
+        //error: wait for arbitrage
+        vm.expectRevert();
+        escrow.cancelEscrow(idee);
     }
 
     function testCancelEscrowBeforeDeadline() public{
