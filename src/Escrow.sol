@@ -345,7 +345,6 @@ contract Escrow is ReentrancyGuard, Pausable{
         require(escrows[idd].depositor == msg.sender, "Not Authorised");
         require(block.timestamp > escrows[idd].deadline,"Deadline is not reached");
         require(escrows[idd].receiverConfirm == false && escrows[idd].depositorConfirm == false,"Wait for arbitrage");
-        require(escrows[idd].status == EscrowStatus.NONE, "Already settled");
 
         if(escrows[idd].asset == AssetType.ERC20){
             uint256 amountToRefund = escrows[idd].amount + escrows[idd].arbitratorFee;

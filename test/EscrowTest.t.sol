@@ -817,6 +817,42 @@ contract EscrowTest is Test{
         escrow.cancelEscrow(idee);
     }
 
+    /**
+     * This test showed how redundant the check below was
+     * `require(escrows[idd].status == EscrowStatus.NONE, "Already settled");`
+     * Solution: check removed
+     */
+    function testCancelSettledEscrow() public{
+        //creating escrow
+        uint256 idee = createNativeEscrow();
+        Escrow.EscrowInfo memory escrw = escrow.getUserEscrow(idee);
+        address depositor = escrw.depositor;
+        address receiver = escrw.receiver;
+
+        // users confirming to terms
+
+        vm.prank(receiver);
+        escrow.confirmEscrow(idee);
+
+        // adding an arbitrator to release escrow
+
+        address arbitrator = address(0xAAA);
+        escrow.addArbitrator(arbitrator);
+
+        vm.warp(31 days);
+
+        // releasing the escrow;
+
+        vm.prank(arbitrator);
+        escrow.refundEscrow(idee);
+
+        // now after some time depositor trying to cancel the escrow 
+        vm.expectRevert();
+        vm.prank(depositor);
+        escrow.cancelEscrow(idee);
+
+    }
+
     function testCancelNftEscrow() public{
         uint256 idee = createNftEscrow();
         Escrow.EscrowInfo memory escrowB4 = escrow.getUserEscrow(idee);
