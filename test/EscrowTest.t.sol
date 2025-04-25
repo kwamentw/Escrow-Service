@@ -692,6 +692,7 @@ contract EscrowTest is Test{
     }
 
 
+    // test for recovering unaccepted tokens
     function testRevertReleaseLockedTkns() public{
         address unAcceptedToken = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         deal(unAcceptedToken, address(0xDDD), 10e18);
@@ -702,6 +703,8 @@ contract EscrowTest is Test{
         vm.prank(address(0xFFF));
         escrow.releaseLockedTkns(unAcceptedToken);
     }
+
+    // testing whether protocol pauses and unpauses
 
     function testPause() public{
         escrow.pause();
@@ -734,6 +737,8 @@ contract EscrowTest is Test{
         createNativeEscrow();
     }
 
+    // test for checking blacklists add and remove
+
     function testAddBlacklists() public{
         escrow.addToBlacklist(address(0xabc));
         assertTrue(escrow.blacklist(address(0xabc)));
@@ -755,6 +760,8 @@ contract EscrowTest is Test{
         //after we remove the depositor from the blacklists watch the escrow be created successfully
         createNativeEscrow();
     }
+
+    // test to see whether depositor can call cancel escrow after deadline 
 
     function testCancelNativeEscrow() public{
         uint256 idee = createNativeEscrow();

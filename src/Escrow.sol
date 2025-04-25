@@ -391,6 +391,7 @@ contract Escrow is ReentrancyGuard, Pausable{
     /**
      * Adds a user to the protocol's blacklist
      * This prevents the user from creating an escrow
+     * Only owner can call these functions
      */
     function addToBlacklist(address account) public onlyOwner{
         require(!blacklist[account], "already blacklisted");
@@ -400,6 +401,7 @@ contract Escrow is ReentrancyGuard, Pausable{
     
     /**
      * Removes a user from blacklist
+     * only owner can call this functiom
      */
     function removeFromBlacklist(address account) public onlyOwner {
         require(blacklist[account], "not blacklisted");
